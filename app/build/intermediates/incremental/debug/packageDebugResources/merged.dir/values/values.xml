@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#000000</color>
+    <color name="syn_background">#000000</color>
+    <color name="syn_button_bg">#21262D</color>
+    <color name="syn_button_stroke">#30363D</color>
+    <color name="syn_nav_bar_bg">#CC0D1117</color>
+    <color name="syn_on_primary">#000000</color>
+    <color name="syn_primary">#00E5FF</color>
+    <color name="syn_primary_variant">#00B0FF</color>
+    <color name="syn_surface">#12141A</color>
+    <color name="syn_text_primary">#FFFFFF</color>
+    <color name="syn_text_secondary">#9E9E9E</color>
+    <color name="white">#FFFFFF</color>
+    <string name="accessibility_back">Go back</string>
+    <string name="accessibility_retry">Retry loading</string>
+    <string name="app_name">SynSound</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_retry">Retry</string>
+    <string name="btn_settings">Settings</string>
+    <string name="download_starting">Downloading file…</string>
+    <string name="error_network_message">Unable to connect to SynSound. Please check your internet connection and try again.</string>
+    <string name="error_network_title">Connection Error</string>
+    <string name="mic_permission_denied_settings">Microphone permission is required for audio capture. Please enable it in Settings.</string>
+    <string name="mic_permission_rationale">SynSound needs microphone access to record and analyze real-time audio.</string>
+    <style name="Theme.SynSound" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/syn_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="colorPrimary">@color/syn_primary</item>
+        <item name="colorOnPrimary">@color/syn_on_primary</item>
+        <item name="colorSurface">@color/syn_surface</item>
+    </style>
+    <style name="Theme.SynSound.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/syn_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.SynSound</item>
+    </style>
+</resources>

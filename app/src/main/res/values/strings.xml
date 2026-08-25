@@ -1,0 +1,13 @@
+﻿<resources>
+    <string name="app_name">SynSound</string>
+    <string name="accessibility_back">Go back</string>
+    <string name="accessibility_retry">Retry loading</string>
+    <string name="error_network_title">Connection Error</string>
+    <string name="error_network_message">Unable to connect to SynSound. Please check your internet connection and try again.</string>
+    <string name="btn_retry">Retry</string>
+    <string name="mic_permission_rationale">SynSound needs microphone access to record and analyze real-time audio.</string>
+    <string name="mic_permission_denied_settings">Microphone permission is required for audio capture. Please enable it in Settings.</string>
+    <string name="btn_settings">Settings</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="download_starting">Downloading file…</string>
+</resources>

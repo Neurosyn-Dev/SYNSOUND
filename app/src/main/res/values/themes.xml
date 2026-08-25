@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme -->
+    <style name="Theme.SynSound" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/syn_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="colorPrimary">@color/syn_primary</item>
+        <item name="colorOnPrimary">@color/syn_on_primary</item>
+        <item name="colorSurface">@color/syn_surface</item>
+    </style>
+
+    <!-- Splash Screen theme using Android 12+ SplashScreen API -->
+    <style name="Theme.SynSound.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/syn_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.SynSound</item>
+    </style>
+</resources>

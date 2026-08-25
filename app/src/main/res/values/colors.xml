@@ -1,0 +1,14 @@
+﻿<resources>
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="syn_background">#000000</color>
+    <color name="syn_surface">#12141A</color>
+    <color name="syn_primary">#00E5FF</color>
+    <color name="syn_primary_variant">#00B0FF</color>
+    <color name="syn_on_primary">#000000</color>
+    <color name="syn_text_primary">#FFFFFF</color>
+    <color name="syn_text_secondary">#9E9E9E</color>
+    <color name="syn_button_bg">#21262D</color>
+    <color name="syn_button_stroke">#30363D</color>
+    <color name="syn_nav_bar_bg">#CC0D1117</color>
+</resources>
