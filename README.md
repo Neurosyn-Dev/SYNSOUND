@@ -5,7 +5,7 @@
 [![Kotlin](https://img.shields.io/badge/Language-Kotlin%202.0-7F52FF.svg?logo=kotlin\&logoColor=white)](https://kotlinlang.org)
 [![Target SDK](https://img.shields.io/badge/Target%20SDK-35%20\(Android%2015\)-blue.svg)](https://developer.android.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Build](https://github.com/LILSYNNOFFICIAL/synsound-v1/actions/workflows/build.yml/badge.svg)](https://github.com/LILSYNNOFFICIAL/synsound-v1/actions/workflows/build.yml)
+[![Build](https://github.com/Neurosyn-Dev/SYNSOUND/actions/workflows/build.yml/badge.svg)](https://github.com/Neurosyn-Dev/SYNSOUND/actions/workflows/build.yml)
 
 [<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/com.synsound.app/)
 

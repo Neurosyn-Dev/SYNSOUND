@@ -4,10 +4,10 @@ Categories:
 
 License: MIT
 
-AuthorName: LILSYNNOFFICIAL
+AuthorName: Neurosyn-Dev
 AuthorEmail: ''
-SourceCode: https://github.com/LILSYNNOFFICIAL/synsound-v1
-IssueTracker: https://github.com/LILSYNNOFFICIAL/synsound-v1/issues
+SourceCode: https://github.com/Neurosyn-Dev/SYNSOUND
+IssueTracker: https://github.com/Neurosyn-Dev/SYNSOUND/issues
 
 Name: SynSound
 AutoName: SynSound
@@ -31,7 +31,7 @@ Description: |-
   No ads. No tracking. No analytics SDKs. 100% open source.
 
 RepoType: git
-Repo: https://github.com/LILSYNNOFFICIAL/synsound-v1
+Repo: https://github.com/Neurosyn-Dev/SYNSOUND
 
 Builds:
   - versionName: 1.0.1
