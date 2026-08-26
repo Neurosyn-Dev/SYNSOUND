@@ -38,6 +38,8 @@ Description: |-
 RepoType: git
 Repo: https://github.com/Neurosyn-Dev/SYNSOUND
 
+Binaries: https://github.com/Neurosyn-Dev/SYNSOUND/releases/download/v%v/SynSound-v%v-release.apk
+
 Builds:
   - versionName: 1.0.1
     versionCode: 2
@@ -47,6 +49,8 @@ Builds:
     scandelete:
       - .gradle
       - .artifacts
+
+AllowedAPKSigningKeys: 6ff991c87aaea8c5e2e796fdc9c68da7c85cfe2f31b15b45b07d5a4bb8c17b4e
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
