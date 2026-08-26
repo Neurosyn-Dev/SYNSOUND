@@ -44,6 +44,9 @@ Builds:
     commit: 2224d98ee79729ad4a557400e3f49598901418f3
     gradle:
       - yes
+    scandelete:
+      - .gradle
+      - .artifacts
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
