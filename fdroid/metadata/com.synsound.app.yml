@@ -3,6 +3,7 @@ Categories:
   - Internet
 
 License: MIT
+AntiFeatures: NonFreeNet, TetheredNet
 
 AuthorName: Neurosyn-Dev
 AuthorEmail: ''
@@ -29,6 +30,10 @@ Description: |-
   that handles audio permissions, microphone access, and real-time DSP.
 
   No ads. No tracking. No analytics SDKs. 100% open source.
+
+  The Android application currently connects to the SynSound web service hosted
+  on Base44. This service is proprietary and the service endpoint is fixed in
+  the application, so the corresponding F-Droid AntiFeatures are declared above.
 
 RepoType: git
 Repo: https://github.com/Neurosyn-Dev/SYNSOUND
