@@ -60,6 +60,7 @@ jobs:
 
       - name: Create CI debug keystore
         run: |
+          rm -f debug.keystore
           keytool -genkeypair -v \
             -keystore debug.keystore \
             -storepass android \
@@ -109,6 +110,7 @@ jobs:
 
       - name: Create CI debug keystore
         run: |
+          rm -f debug.keystore
           keytool -genkeypair -v \
             -keystore debug.keystore \
             -storepass android \
