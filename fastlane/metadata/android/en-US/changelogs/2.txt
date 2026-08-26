@@ -1,0 +1,9 @@
+### SynSound v1.0.1
+
+- Initial public release on F-Droid
+- Real-time acoustic event detection
+- Audio waveform visualizer
+- Cloud REST client for sound analysis
+- DSP filter suite (high-pass, low-pass, band-pass)
+- WebView-based UI with deep link support
+- No ads, no tracking, no proprietary SDKs

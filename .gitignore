@@ -1,11 +1,36 @@
-﻿*.iml
-.gradle
+# Android build artifacts
+*.iml
+.gradle/
+**/.gradle/
 /local.properties
-/.idea
+/.idea/
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+/build/
+/captures/
+.externalNativeBuild/
+.cxx/
 local.properties
-/app/build
+
+# Module build outputs (never commit compiled outputs)
+**/build/
+
+# APK files (distributed via F-Droid / GitHub Releases, not committed to source)
+*.apk
+*.aab
+
+# Keystore files — NEVER commit real keystores!
+# debug.keystore is included intentionally for F-Droid reproducible builds
+# *.keystore
+
+# Gradle wrapper jar (generated)
+# gradle/wrapper/gradle-wrapper.jar
+
+# Kotlin cache
+.kotlin/
+**/.kotlin/
+
+# Antigravity IDE artifacts
+.artifacts/
+
+# VS Code
+.vscode/

@@ -1,0 +1,3 @@
+SynSound is an AI-powered acoustic analysis and sound synthesis application for Android.
+
+Experience real-time audio visualization, acoustic event detection, and cloud-connected sound processing — all with no ads, no tracking, and no proprietary SDKs.

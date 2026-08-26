@@ -1,9 +1,13 @@
 # SynSound — Android Application Wrapper
 
+[![F-Droid](https://img.shields.io/f-droid/v/com.synsound.app.svg?logo=f-droid)](https://f-droid.org/packages/com.synsound.app/)
 [![Android](https://img.shields.io/badge/Platform-Android-3DDC84.svg?logo=android\&logoColor=white)](https://www.android.com)
 [![Kotlin](https://img.shields.io/badge/Language-Kotlin%202.0-7F52FF.svg?logo=kotlin\&logoColor=white)](https://kotlinlang.org)
 [![Target SDK](https://img.shields.io/badge/Target%20SDK-35%20\(Android%2015\)-blue.svg)](https://developer.android.com)
-[![License](https://img.shields.io/badge/License-Proprietary-black.svg)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Build](https://github.com/LILSYNNOFFICIAL/synsound-v1/actions/workflows/build.yml/badge.svg)](https://github.com/LILSYNNOFFICIAL/synsound-v1/actions/workflows/build.yml)
+
+[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/com.synsound.app/)
 
 A sleek, production-grade native Android wrapper for **[SynSound](https://synsound-beta.base44.app/)** — an advanced real-time acoustic intelligence and forensic audio monitoring platform designed for continuous signal analysis, audio enhancement, environmental sound monitoring, and automated event detection.
 

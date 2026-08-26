@@ -1,0 +1,10 @@
+<resources>
+    <string name="syn_sdk_name">SynSound SDK</string>
+    <string name="syn_sdk_service_channel_name">SynSound Acoustic Monitoring</string>
+    <string name="syn_sdk_service_channel_desc">Active continuous acoustic intelligence and event monitoring</string>
+    <string name="syn_sdk_service_title">SynSound Active</string>
+    <string name="syn_sdk_service_content">Acoustic intelligence monitoring active</string>
+    <string name="syn_sdk_connection_error">Unable to connect to SynSound platform</string>
+    <string name="syn_sdk_retry">Retry</string>
+    <string name="syn_sdk_mic_required">Microphone permission is required for real-time acoustic analysis</string>
+</resources>

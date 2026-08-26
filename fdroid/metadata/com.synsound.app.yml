@@ -1,0 +1,54 @@
+Categories:
+  - Multimedia
+  - Internet
+
+License: MIT
+
+AuthorName: LILSYNNOFFICIAL
+AuthorEmail: ''
+SourceCode: https://github.com/LILSYNNOFFICIAL/synsound-v1
+IssueTracker: https://github.com/LILSYNNOFFICIAL/synsound-v1/issues
+
+Name: SynSound
+AutoName: SynSound
+
+Summary: AI-powered acoustic analysis & sound synthesis app
+Description: |-
+  SynSound is an AI-powered acoustic analysis and sound synthesis application.
+  It provides real-time audio visualization, acoustic event detection, and
+  a cloud-connected SDK for advanced sound processing.
+
+  Features include:
+  * Real-time acoustic event detection
+  * Audio visualizer with waveform display
+  * Cloud-connected REST client for sound analysis
+  * DSP filters for audio processing
+  * WebView-based UI for a rich interactive experience
+
+  The app is a lightweight WebView wrapper backed by a native Android SDK
+  that handles audio permissions, microphone access, and real-time DSP.
+
+  No ads. No tracking. No analytics SDKs. 100% open source.
+
+RepoType: git
+Repo: https://github.com/LILSYNNOFFICIAL/synsound-v1
+
+Builds:
+  - versionName: 1.0.1
+    versionCode: 2
+    commit: v1.0.1
+    subdir: app
+    gradle:
+      - release
+    prebuild:
+      - echo "sdk.dir=$ANDROID_HOME" > ../local.properties
+    scandelete:
+      - app/build
+      - sdk/build
+
+AllowedAPKSigningKeys: auto
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 1.0.1
+CurrentVersionCode: 2

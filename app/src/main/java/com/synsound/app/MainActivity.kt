@@ -1,4 +1,4 @@
-﻿package com.synsound.app
+package com.synsound.app
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -111,6 +111,18 @@ class MainActivity : AppCompatActivity() {
         setupInsets()
         setupWebView()
         setupBackNavigation()
+
+        // Initialize SynSound Acoustic Intelligence SDK
+        if (!com.synsound.sdk.core.SynSoundSDK.isInitialized()) {
+            com.synsound.sdk.core.SynSoundSDK.initialize(
+                this,
+                com.synsound.sdk.core.SynSoundConfig.Builder()
+                    .environment(com.synsound.sdk.core.SynSoundEnvironment.Beta)
+                    .enableRealTimeDsp(true)
+                    .enableEventDetection(true)
+                    .build()
+            )
+        }
 
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState)
@@ -433,12 +445,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        webView.onPause()
+        // We do not call webView.onPause() here to ensure audio continues playing
+        // when the application loses focus or the screen is locked.
     }
 
     override fun onResume() {
         super.onResume()
-        webView.onResume()
+        // We do not call webView.onResume() here as we didn't pause it.
     }
 
     override fun onDestroy() {
