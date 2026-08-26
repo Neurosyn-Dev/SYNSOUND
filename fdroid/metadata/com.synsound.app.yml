@@ -1,6 +1,7 @@
 Categories:
-  - Multimedia
-  - Internet
+
+- Multimedia
+- Internet
 
 License: MIT
 
@@ -14,37 +15,37 @@ AutoName: SynSound
 
 Summary: AI-powered acoustic analysis & sound synthesis app
 Description: |-
-  SynSound is an AI-powered acoustic analysis and sound synthesis application.
-  It provides real-time audio visualization, acoustic event detection, and
-  a cloud-connected SDK for advanced sound processing.
+SynSound is an AI-powered acoustic analysis and sound synthesis application.
+It provides real-time audio visualization, acoustic event detection, and a cloud-connected SDK for advanced sound processing.
 
-  Features include:
-  * Real-time acoustic event detection
-  * Audio visualizer with waveform display
-  * Cloud-connected REST client for sound analysis
-  * DSP filters for audio processing
-  * WebView-based UI for a rich interactive experience
+Features include:
 
-  The app is a lightweight WebView wrapper backed by a native Android SDK
-  that handles audio permissions, microphone access, and real-time DSP.
+* Real-time acoustic event detection
+* Audio visualizer with waveform display
+* Cloud-connected REST client for sound analysis
+* DSP filters for audio processing
+* WebView-based UI for a rich interactive experience
 
-  No ads. No tracking. No analytics SDKs. 100% open source.
+The app is a lightweight WebView wrapper backed by a native Android SDK
+that handles audio permissions, microphone access, and real-time DSP.
+
+No ads. No tracking. No analytics SDKs. 100% open source.
 
 RepoType: git
 Repo: https://github.com/Neurosyn-Dev/SYNSOUND
 
 Builds:
-  - versionName: 1.0.1
-    versionCode: 2
-    commit: v1.0.1
-    subdir: app
-    gradle:
-      - release
+
+- versionName: 1.0.1
+  versionCode: 2
+  commit: v1.0.1
+  gradle:
+  - release
     prebuild:
-      - echo "sdk.dir=$ANDROID_HOME" > ../local.properties
+  - echo "sdk.dir=$ANDROID_HOME" > local.properties
     scandelete:
-      - app/build
-      - sdk/build
+  - app/build
+  - sdk/build
 
 AllowedAPKSigningKeys: auto
 
