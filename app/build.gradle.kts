@@ -26,16 +26,6 @@ android {
         includeInBundle = false
     }
 
-    signingConfigs {
-        create("release") {
-            // Default to debug keystore for easy testing, configurable via environment/properties
-            storeFile = file(project.findProperty("RELEASE_STORE_FILE") ?: "$rootDir/debug.keystore")
-            storePassword = project.findProperty("RELEASE_STORE_PASSWORD")?.toString() ?: "android"
-            keyAlias = project.findProperty("RELEASE_KEY_ALIAS")?.toString() ?: "androiddebugkey"
-            keyPassword = project.findProperty("RELEASE_KEY_PASSWORD")?.toString() ?: "android"
-        }
-    }
-
     buildTypes {
         debug {
             applicationIdSuffix = ""
@@ -49,7 +39,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
         }
     }
 
