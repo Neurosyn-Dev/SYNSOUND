@@ -20,6 +20,12 @@ android {
         }
     }
 
+    dependenciesInfo {
+        // F-Droid does not allow the encrypted AGP dependency metadata signing block.
+        includeInApk = false
+        includeInBundle = false
+    }
+
     signingConfigs {
         create("release") {
             // Default to debug keystore for easy testing, configurable via environment/properties
