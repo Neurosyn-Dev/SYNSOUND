@@ -12,7 +12,7 @@
 [![AudioWorklet](https://img.shields.io/badge/Real--Time-AudioWorklet-yellow.svg)](https://developer.mozilla.org/en-US/docs/Web/API/AudioWorklet)
 [![F-Droid](https://img.shields.io/f-droid/v/com.synsound.app.svg?logo=f-droid)](https://f-droid.org/packages/com.synsound.app/)
 [![Build](https://github.com/Neurosyn-Dev/SYNSOUND/actions/workflows/build.yml/badge.svg)](https://github.com/Neurosyn-Dev/SYNSOUND/actions/workflows/build.yml)
-[![License](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 [<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/com.synsound.app/)
 
@@ -1313,32 +1313,19 @@ SYNSOUND's broader performance objectives are:
 
 # Android Application
 
-The Android application provides a dedicated native environment for SYNSOUND.
+The Android application is a lightweight WebView client for the hosted SYNSOUND web service.
 
-It is an Android application wrapper around the SYNSOUND web/PWA experience while allowing native Android capabilities where necessary.
+The current Android release loads the SYNSOUND web application from:
 
-It provides:
+`https://synsound-beta.base44.app`
 
-- Dedicated application identity
-- Browser-free application experience
-- Fullscreen presentation
-- Android microphone permissions
-- Web Audio integration
-- Native file selection
-- File downloads
-- Authentication/session persistence
-- Android lifecycle handling
-- Native Back navigation
-- Network recovery
-- WebView crash recovery
-- Secure WebView configuration
-- Adaptive launcher resources
+The Android layer provides the native application shell, Android microphone permission handling, WebView integration, file selection and downloads, session persistence, navigation, and network/error recovery.
 
-The Android layer is intentionally lightweight.
+The native SDK is included in the repository, but the current Android activity does not start the SDK monitoring service or native visualization components. Those native components therefore should not be represented as features of the current Android APK.
 
-**SYNSOUND Web/PWA = Core application**
+**Current Android APK = WebView client for the hosted SYNSOUND service**
 
-**SYNSOUND Android = Native Android environment**
+**SYNSOUND Web/PWA = hosted application experience**
 
 ---
 
@@ -1372,8 +1359,8 @@ Where browser technology cannot reliably provide required low-latency native aud
 | Android Language | Kotlin 2.0 |
 | Primary Android Technology | Android WebView |
 | Required Permission | `RECORD_AUDIO` |
-| Version | `1.0.0` |
-| Version Code | `1` |
+| Version | `1.0.2` |
+| Version Code | `3` |
 
 ---
 
@@ -1403,25 +1390,20 @@ The wrapper provides:
 
 # Security & Privacy
 
-Security principles include:
+The Android wrapper communicates with the hosted SYNSOUND web service over HTTPS.
+
+Security measures include:
 
 - HTTPS-only primary communication
-- Normal Android/WebView certificate validation
+- Android/WebView certificate validation
 - Cleartext traffic disabled
-- Minimal permissions
 - Runtime microphone permission handling
-- No unnecessary JavaScript bridges
-- No unnecessary native APIs exposed to web content
-- No hardcoded credentials
-- No hardcoded API keys
-- No password storage by the wrapper
-- No authentication-token logging
+- No hardcoded credentials or API keys
 - WebView debugging disabled in release builds
-- Android application sandboxing
+- Restricted navigation to the SynSound service origin
+- No unnecessary JavaScript bridges
 
-SYNSOUND does not intentionally bypass Android or WebView security controls to make functionality work.
-
----
+The Android wrapper does not make a claim that microphone audio remains on-device. When microphone access is granted to the hosted web application, audio processing and network handling are controlled by that remote application and its service infrastructure.
 
 # Microphone Privacy
 
@@ -1503,7 +1485,7 @@ The exact implementation language of individual Base44-generated web components 
 # Project Structure
 
 ```text
-synsound-android/
+SYNSOUND/
 ├── app/
 │   ├── build.gradle.kts
 │   ├── proguard-rules.pro
@@ -1859,13 +1841,9 @@ https://f-droid.org/packages/com.synsound.app/
 
 # License
 
-**Proprietary**
+**MIT License**
 
-SYNSOUND and its associated source code, application architecture, DSP systems, audio-processing systems, branding, designs, interfaces, and intellectual property are proprietary unless explicitly stated otherwise in individual files or repository documentation.
-
-Third-party open-source engines and libraries remain subject to their respective licenses.
-
-Unauthorized copying, redistribution, modification, or commercial use of proprietary SYNSOUND components may be restricted.
+This repository is licensed under the MIT License. See [LICENSE](LICENSE) for the complete license text.
 
 ---
 
