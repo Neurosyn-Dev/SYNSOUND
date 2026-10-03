@@ -210,7 +210,7 @@ class SynSoundView @JvmOverloads constructor(
                     return true
                 }
 
-                if (isTrustedHost(host)) {
+                if (isTrustedHttpsUri(uri)) {
                     return false
                 }
 
@@ -278,12 +278,15 @@ class SynSoundView @JvmOverloads constructor(
         val uri = request.origin
         return uri != null &&
             uri.scheme.equals("https", ignoreCase = true) &&
+            (uri.port == -1 || uri.port == 443) &&
             uri.host?.equals(TRUSTED_HOST, ignoreCase = true) == true &&
             request.resources.toSet() == setOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE)
     }
 
-    private fun isTrustedHost(host: String): Boolean {
-        return host == TRUSTED_HOST
+    private fun isTrustedHttpsUri(uri: Uri): Boolean {
+        return uri.scheme.equals("https", ignoreCase = true) &&
+            (uri.port == -1 || uri.port == 443) &&
+            uri.host?.equals(TRUSTED_HOST, ignoreCase = true) == true
     }
 
     private fun Int.dpToPx(): Int =
