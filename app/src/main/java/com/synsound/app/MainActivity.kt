@@ -3,7 +3,6 @@ package com.synsound.app
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.DownloadManager
-import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -313,7 +312,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                if (isTrustedHost(host)) {
+                if (isTrustedHttpsUri(uri)) {
                     return false
                 }
 
@@ -438,12 +437,14 @@ class MainActivity : AppCompatActivity() {
         val uri = request.origin
         return uri != null &&
             uri.scheme.equals("https", ignoreCase = true) &&
+            (uri.port == -1 || uri.port == 443) &&
             uri.host?.equals(TRUSTED_HOST, ignoreCase = true) == true &&
             request.resources.toSet() == setOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE)
     }
 
     private fun isTrustedHttpsUri(uri: Uri): Boolean {
         return uri.scheme.equals("https", ignoreCase = true) &&
+            (uri.port == -1 || uri.port == 443) &&
             uri.host?.equals(TRUSTED_HOST, ignoreCase = true) == true
     }
 
@@ -468,10 +469,6 @@ class MainActivity : AppCompatActivity() {
         swipeRefreshLayout.isRefreshing = false
         webView.visibility = View.GONE
         errorContainer.visibility = View.VISIBLE
-    }
-
-    private fun isTrustedHost(host: String): Boolean {
-        return host.equals(TRUSTED_HOST, ignoreCase = true)
     }
 
     private fun loadInitialUrl(intent: Intent?) {
