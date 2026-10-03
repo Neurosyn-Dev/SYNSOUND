@@ -19,8 +19,7 @@ local.properties
 *.aab
 
 # Keystore files — NEVER commit real keystores!
-# debug.keystore is included intentionally for F-Droid reproducible builds
-# *.keystore
+*.keystore
 
 # Gradle wrapper jar (generated)
 # gradle/wrapper/gradle-wrapper.jar
@@ -34,3 +33,5 @@ local.properties
 
 # VS Code
 .vscode/
+
+desktop.ini
