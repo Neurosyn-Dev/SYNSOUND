@@ -230,21 +230,28 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onPermissionRequest(request: PermissionRequest) {
-                val hasAudioRequest = request.resources.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)
+                val requestedResources = request.resources.toSet()
+                val hasAudioRequest = requestedResources.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)
 
-                if (hasAudioRequest) {
-                    if (ContextCompat.checkSelfPermission(
-                            this@MainActivity,
-                            Manifest.permission.RECORD_AUDIO
-                        ) == PackageManager.PERMISSION_GRANTED
-                    ) {
-                        request.grant(request.resources)
-                    } else {
-                        pendingPermissionRequest = request
-                        audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                // The SynSound web client only needs microphone capture. Never grant
+                // unrelated WebView capture resources such as camera access.
+                if (!hasAudioRequest || requestedResources.any {
+                        it != PermissionRequest.RESOURCE_AUDIO_CAPTURE
                     }
+                ) {
+                    request.deny()
+                    return
+                }
+
+                if (ContextCompat.checkSelfPermission(
+                        this@MainActivity,
+                        Manifest.permission.RECORD_AUDIO
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
+                    request.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE))
                 } else {
-                    request.grant(request.resources)
+                    pendingPermissionRequest = request
+                    audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                 }
             }
 
@@ -409,13 +416,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isTrustedHost(host: String): Boolean {
-        return host == "synsound-beta.base44.app" ||
-               host.endsWith(".base44.app") ||
-               host.endsWith(".base44.com")
+        return host.equals("synsound-beta.base44.app", ignoreCase = true)
     }
 
     private fun loadInitialUrl(intent: Intent?) {
-        val targetUrl = intent?.data?.toString() ?: SYN_SOUND_URL
+        val incomingUri = intent?.data
+        val targetUrl = if (
+            incomingUri != null &&
+            incomingUri.scheme.equals("https", ignoreCase = true) &&
+            incomingUri.host?.equals("synsound-beta.base44.app", ignoreCase = true) == true
+        ) {
+            incomingUri.toString()
+        } else {
+            SYN_SOUND_URL
+        }
         webView.loadUrl(targetUrl)
     }
 
