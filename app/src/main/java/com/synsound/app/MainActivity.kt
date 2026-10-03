@@ -232,10 +232,16 @@ class MainActivity : AppCompatActivity() {
             override fun onPermissionRequest(request: PermissionRequest) {
                 val requestedResources = request.resources.toSet()
                 val hasAudioRequest = requestedResources.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)
+                val originHost = request.origin.host
+                val isTrustedOrigin =
+                    request.origin.scheme.equals("https", ignoreCase = true) &&
+                    originHost?.equals("synsound-beta.base44.app", ignoreCase = true) == true
 
-                // The SynSound web client only needs microphone capture. Never grant
-                // unrelated WebView capture resources such as camera access.
-                if (!hasAudioRequest || requestedResources.any {
+                // Only the SynSound service origin may request microphone access.
+                // Never grant capture resources to embedded or untrusted origins.
+                if (!isTrustedOrigin ||
+                    !hasAudioRequest ||
+                    requestedResources.any {
                         it != PermissionRequest.RESOURCE_AUDIO_CAPTURE
                     }
                 ) {
