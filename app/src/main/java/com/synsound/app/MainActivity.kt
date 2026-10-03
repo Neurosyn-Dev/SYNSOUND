@@ -3,6 +3,7 @@ package com.synsound.app
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.DownloadManager
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -59,6 +60,19 @@ class MainActivity : AppCompatActivity() {
 
     private var pendingPermissionRequest: PermissionRequest? = null
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
+    private var pendingDownload: DownloadRequestData? = null
+
+    private val downloadStoragePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        val download = pendingDownload
+        pendingDownload = null
+        if (isGranted && download != null) {
+            enqueueDownload(download)
+        } else if (!isGranted) {
+            Toast.makeText(this, R.string.download_permission_denied, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     private val audioPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -208,7 +222,7 @@ class MainActivity : AppCompatActivity() {
 
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
-        cookieManager.setAcceptThirdPartyCookies(webView, true)
+        cookieManager.setAcceptThirdPartyCookies(webView, false)
 
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
 
@@ -256,9 +270,21 @@ class MainActivity : AppCompatActivity() {
                 fileUploadCallback?.onReceiveValue(null)
                 fileUploadCallback = filePathCallback
 
-                val intent = fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
-                    type = "*/*"
-                    addCategory(Intent.CATEGORY_OPENABLE)
+                val intent = runCatching {
+                    fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
+                        type = "*/*"
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                    }
+                }.getOrElse {
+                    Intent(Intent.ACTION_GET_CONTENT).apply {
+                        type = "*/*"
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                    }
+                }.apply {
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    if (fileChooserParams?.mode == FileChooserParams.MODE_OPEN_MULTIPLE) {
+                        putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                    }
                 }
 
                 try {
@@ -343,32 +369,70 @@ class MainActivity : AppCompatActivity() {
         webView.setDownloadListener(DownloadListener { url, userAgent, contentDisposition, mimetype, _ ->
             val uri = runCatching { Uri.parse(url) }.getOrNull()
             if (uri == null || !isTrustedHttpsUri(uri)) {
-                Toast.makeText(this, R.string.download_starting, Toast.LENGTH_SHORT).show()
                 return@DownloadListener
             }
 
-            try {
-                val request = DownloadManager.Request(uri).apply {
-                    setMimeType(mimetype)
-                    addRequestHeader("User-Agent", userAgent)
-                    CookieManager.getInstance().getCookie(uri.toString())?.let {
-                        addRequestHeader("Cookie", it)
-                    }
-                    val fileName = URLUtil.guessFileName(uri.toString(), contentDisposition, mimetype)
-                    setTitle(fileName)
-                    setDescription(getString(R.string.download_starting))
-                    setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                    setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
-                }
+            val download = DownloadRequestData(
+                uri = uri,
+                userAgent = userAgent,
+                contentDisposition = contentDisposition,
+                mimeType = mimetype
+            )
 
-                val dm = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-                dm.enqueue(request)
-                Toast.makeText(this, R.string.download_starting, Toast.LENGTH_SHORT).show()
-            } catch (_: Exception) {
-                Toast.makeText(this, R.string.download_starting, Toast.LENGTH_SHORT).show()
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P &&
+                ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                pendingDownload = download
+                downloadStoragePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            } else {
+                enqueueDownload(download)
             }
         })
     }
+
+    private fun enqueueDownload(download: DownloadRequestData) {
+        try {
+            val fileName = URLUtil.guessFileName(
+                download.uri.toString(),
+                download.contentDisposition,
+                download.mimeType
+            )
+            val request = DownloadManager.Request(download.uri).apply {
+                download.mimeType?.takeIf { it.isNotBlank() }?.let { setMimeType(it) }
+                download.userAgent?.takeIf { it.isNotBlank() }?.let {
+                    addRequestHeader("User-Agent", it)
+                }
+                CookieManager.getInstance().getCookie(download.uri.toString())
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { addRequestHeader("Cookie", it) }
+                setTitle(fileName)
+                setDescription(getString(R.string.download_starting))
+                setNotificationVisibility(
+                    DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+                )
+                setDestinationInExternalPublicDir(
+                    Environment.DIRECTORY_DOWNLOADS,
+                    fileName
+                )
+            }
+
+            val dm = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            dm.enqueue(request)
+            Toast.makeText(this, R.string.download_starting, Toast.LENGTH_SHORT).show()
+        } catch (_: Exception) {
+            Toast.makeText(this, R.string.download_failed, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private data class DownloadRequestData(
+        val uri: Uri,
+        val userAgent: String?,
+        val contentDisposition: String?,
+        val mimeType: String?
+    )
 
     private fun isTrustedAudioRequest(request: PermissionRequest): Boolean {
         val uri = request.origin
@@ -457,6 +521,7 @@ class MainActivity : AppCompatActivity() {
         pendingPermissionRequest = null
         fileUploadCallback?.onReceiveValue(null)
         fileUploadCallback = null
+        pendingDownload = null
         webView.destroy()
         super.onDestroy()
     }
