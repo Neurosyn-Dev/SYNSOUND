@@ -158,7 +158,7 @@ class SynSoundView @JvmOverloads constructor(
 
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
-        cookieManager.setAcceptThirdPartyCookies(webView, true)
+        cookieManager.setAcceptThirdPartyCookies(webView, false)
 
         webView.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
@@ -192,7 +192,10 @@ class SynSoundView @JvmOverloads constructor(
                 fileChooserParams: FileChooserParams?
             ): Boolean {
                 return fileChooserCallback?.onShowFileChooser(filePathCallback, fileChooserParams)
-                    ?: super.onShowFileChooser(view, filePathCallback, fileChooserParams)
+                    ?: run {
+                        filePathCallback?.onReceiveValue(null)
+                        true
+                    }
             }
         }
 
