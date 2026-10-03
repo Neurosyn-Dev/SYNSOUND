@@ -1409,16 +1409,7 @@ The Android wrapper does not make a claim that microphone audio remains on-devic
 
 Microphone access is controlled through the standard Android permission system.
 
-Microphone access may be used for:
-
-- Live monitoring
-- Recording
-- DSP
-- Speech recognition
-- Visualization
-- Acoustic analysis
-
-Permission should be requested when functionality actually requires it rather than unnecessarily at startup.
+The Android wrapper requests microphone access only when the hosted SynSound web application requests audio capture from the trusted SynSound service origin. The wrapper does not claim that microphone audio remains on-device.
 
 Users can manage microphone access through Android system settings.
 
