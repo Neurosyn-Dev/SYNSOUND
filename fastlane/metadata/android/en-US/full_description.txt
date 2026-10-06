@@ -1,39 +1,36 @@
-<p>SynSound is an open-source, AI-powered acoustic analysis and sound synthesis application for Android.</p>
+<p>SynSound is an open-source Android WebView client for the SynSound web application, with a reusable Kotlin SDK for secure Android integration.</p>
 
 <h2>Features</h2>
+<ul>
+<li>Secure HTTPS-only WebView integration with strict trusted-origin navigation.</li>
+<li>Real-time microphone capture through the hosted SynSound web application when Android microphone permission is granted.</li>
+<li>Native file selection with multi-file support and secure URI access.</li>
+<li>Authenticated downloads from the trusted SynSound HTTPS origin, including legacy Android download handling.</li>
+<li>Secure SDK WebView permission forwarding with fail-closed behavior.</li>
+<li>HTTPS/WSS-only custom SDK transport configuration.</li>
+</ul>
 
-<h3>Real-Time Audio Visualization</h3>
-<p>Watch your audio come alive with a live waveform visualizer built natively into the Android SDK.</p>
+<h2>Privacy and Security</h2>
+<p>No ads, analytics SDKs, crash reporters, or Firebase are included. The Android wrapper communicates with the hosted SynSound service over HTTPS. The wrapper does not claim that microphone audio remains on-device; audio processing and network handling are controlled by the hosted web application and its service infrastructure.</p>
 
-<h3>Acoustic Event Detection</h3>
-<p>SynSound's DSP engine detects acoustic events in real time — from background noise classification to transient spike detection.</p>
-
-<h3>Cloud-Connected Analysis</h3>
-<p>The built-in REST client connects to the SynSound cloud backend for advanced, server-side sound analysis and synthesis.</p>
-
-<h3>DSP Filters</h3>
-<p>High-pass, low-pass, and band-pass filters implemented in pure Kotlin — no native libraries required.</p>
-
-<h3>Privacy First</h3>
-<p>No ads. No crash reporters. No analytics SDKs. No Firebase. Your audio never leaves the device unless you explicitly trigger a cloud analysis.</p>
-
-<h3>Open Source</h3>
-<p>100% of the app and SDK source code is available on GitHub under the MIT license.</p>
+<h2>Open Source</h2>
+<p>The Android application and SDK source code are available on GitHub under the MIT license.</p>
 
 <h2>Permissions</h2>
 <ul>
-<li><strong>RECORD_AUDIO</strong> — Required for real-time acoustic event detection and waveform visualization.</li>
-<li><strong>INTERNET</strong> — Used for optional cloud-side sound analysis.</li>
-<li><strong>ACCESS_NETWORK_STATE</strong> — Used to check connectivity before attempting cloud requests.</li>
-<li><strong>MODIFY_AUDIO_SETTINGS</strong> — Used to optimize audio routing for low-latency capture.</li>
+<li><strong>RECORD_AUDIO</strong> — Required when the hosted SynSound web application requests microphone capture.</li>
+<li><strong>INTERNET</strong> — Required to connect to the hosted SynSound web application.</li>
+<li><strong>ACCESS_NETWORK_STATE</strong> — Used for connectivity handling.</li>
+<li><strong>MODIFY_AUDIO_SETTINGS</strong> — Used for audio routing integration.</li>
+<li><strong>WRITE_EXTERNAL_STORAGE</strong> — Requested only on Android 9 and older when saving downloads to public Downloads.</li>
 </ul>
 
 <h2>Technical Details</h2>
-<p>SynSound is structured as a multi-module Android project:</p>
 <ul>
-<li><strong>:app</strong> — A lightweight WebView wrapper that hosts the SynSound web interface and handles Android system integration (permissions, deep links, splash screen).</li>
-<li><strong>:sdk</strong> — A pure Kotlin Android library providing the AudioVisualizer, AcousticEventDetector, DSP filters, and cloud REST client.</li>
+<li><strong>:app</strong> — Android WebView wrapper and native Android system integration.</li>
+<li><strong>:sdk</strong> — Reusable Kotlin SDK with secure WebView and transport components.</li>
 </ul>
 
 <p>Minimum Android version: Android 8.0 (API 26)<br>
-Target Android version: Android 15 (API 35)</p>
+Target Android version: Android 15 (API 35)<br>
+Version: 1.0.2 (versionCode 3)</p>
