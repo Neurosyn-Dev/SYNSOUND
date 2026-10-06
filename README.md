@@ -1466,8 +1466,8 @@ The exact implementation language of individual Base44-generated web components 
 | Minimum SDK | 26 |
 | Target SDK | 35 |
 | Compile SDK | 35 |
-| Version | `1.0.0` |
-| Version Code | `1` |
+| Version | `1.0.2` |
+| Version Code | `3` |
 | Primary Permission | `RECORD_AUDIO` |
 | Android Technology | WebView + native integration |
 
