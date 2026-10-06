@@ -25,7 +25,6 @@ import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
-import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -61,26 +60,24 @@ class MainActivity : AppCompatActivity() {
     private var pendingPermissionRequest: PermissionRequest? = null
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
 
-    // Activity Result Launcher for Audio Recording runtime permission
     private val audioPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         val request = pendingPermissionRequest
         pendingPermissionRequest = null
 
-        if (isGranted) {
-            request?.grant(request.resources)
+        if (isGranted && request != null && isTrustedAudioRequest(request)) {
+            request.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE))
         } else {
             request?.deny()
-            if (!shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)) {
+            if (!isGranted && !shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)) {
                 showPermissionSettingsDialog()
-            } else {
+            } else if (!isGranted) {
                 Toast.makeText(this, R.string.mic_permission_rationale, Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    // Activity Result Launcher for File Chooser / Uploads
     private val fileChooserLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -101,7 +98,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Install modern Android splash screen
         installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -112,7 +108,6 @@ class MainActivity : AppCompatActivity() {
         setupWebView()
         setupBackNavigation()
 
-        // Initialize SynSound Acoustic Intelligence SDK
         if (!com.synsound.sdk.core.SynSoundSDK.isInitialized()) {
             com.synsound.sdk.core.SynSoundSDK.initialize(
                 this,
@@ -204,20 +199,19 @@ class MainActivity : AppCompatActivity() {
             cacheMode = WebSettings.LOAD_DEFAULT
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             allowFileAccess = false
-            allowContentAccess = true
+            allowContentAccess = false
+            setAllowFileAccessFromFileURLs(false)
+            setAllowUniversalAccessFromFileURLs(false)
             setSupportMultipleWindows(false)
             defaultTextEncodingName = "utf-8"
         }
 
-        // Cookie Configuration
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
         cookieManager.setAcceptThirdPartyCookies(webView, true)
 
-        // Disable WebView debugging in production release builds
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
 
-        // WebChromeClient for permissions, file choosing, and progress updates
         webView.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
                 if (newProgress in 1..99) {
@@ -230,21 +224,21 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onPermissionRequest(request: PermissionRequest) {
-                val hasAudioRequest = request.resources.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)
+                if (!isTrustedAudioRequest(request)) {
+                    request.deny()
+                    return
+                }
 
-                if (hasAudioRequest) {
-                    if (ContextCompat.checkSelfPermission(
-                            this@MainActivity,
-                            Manifest.permission.RECORD_AUDIO
-                        ) == PackageManager.PERMISSION_GRANTED
-                    ) {
-                        request.grant(request.resources)
-                    } else {
-                        pendingPermissionRequest = request
-                        audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                    }
+                if (ContextCompat.checkSelfPermission(
+                        this@MainActivity,
+                        Manifest.permission.RECORD_AUDIO
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
+                    request.grant(arrayOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE))
                 } else {
-                    request.grant(request.resources)
+                    pendingPermissionRequest?.deny()
+                    pendingPermissionRequest = request
+                    audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                 }
             }
 
@@ -269,7 +263,7 @@ class MainActivity : AppCompatActivity() {
 
                 try {
                     fileChooserLauncher.launch(intent)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     fileUploadCallback?.onReceiveValue(null)
                     fileUploadCallback = null
                     return false
@@ -278,36 +272,30 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // WebViewClient for navigation, error handling, and SSL security
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val uri = request?.url ?: return false
                 val host = uri.host?.lowercase() ?: ""
                 val scheme = uri.scheme?.lowercase() ?: ""
 
-                // Handle external protocols
                 if (scheme != "http" && scheme != "https") {
                     return try {
-                        val externalIntent = Intent(Intent.ACTION_VIEW, uri)
-                        startActivity(externalIntent)
+                        startActivity(Intent(Intent.ACTION_VIEW, uri))
                         true
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         true
                     }
                 }
 
-                // Keep SynSound and base44 subdomains inside WebView
                 if (isTrustedHost(host)) {
                     return false
                 }
 
-                // For external third-party URLs (e.g. external links or oauth popups), launch browser safely
                 return try {
-                    val browserIntent = Intent(Intent.ACTION_VIEW, uri)
-                    startActivity(browserIntent)
+                    startActivity(Intent(Intent.ACTION_VIEW, uri))
                     true
-                } catch (e: Exception) {
-                    false
+                } catch (_: Exception) {
+                    true
                 }
             }
 
@@ -329,7 +317,6 @@ class MainActivity : AppCompatActivity() {
                 request: WebResourceRequest?,
                 error: WebResourceError?
             ) {
-                // Show error view only for main frame failures
                 if (request?.isForMainFrame == true) {
                     showErrorState()
                 }
@@ -340,7 +327,6 @@ class MainActivity : AppCompatActivity() {
                 handler: SslErrorHandler?,
                 error: SslError?
             ) {
-                // Enforce strict SSL security - reject invalid/insecure certificates
                 handler?.cancel()
                 showErrorState()
             }
@@ -349,23 +335,26 @@ class MainActivity : AppCompatActivity() {
                 view: WebView?,
                 detail: RenderProcessGoneDetail?
             ): Boolean {
-                // Recover from render process termination gracefully
                 showErrorState()
                 return true
             }
         }
 
-        // Download Listener
         webView.setDownloadListener(DownloadListener { url, userAgent, contentDisposition, mimetype, _ ->
+            val uri = runCatching { Uri.parse(url) }.getOrNull()
+            if (uri == null || !isTrustedHttpsUri(uri)) {
+                Toast.makeText(this, R.string.download_starting, Toast.LENGTH_SHORT).show()
+                return@DownloadListener
+            }
+
             try {
-                val request = DownloadManager.Request(Uri.parse(url)).apply {
+                val request = DownloadManager.Request(uri).apply {
                     setMimeType(mimetype)
                     addRequestHeader("User-Agent", userAgent)
-                    val cookie = CookieManager.getInstance().getCookie(url)
-                    if (cookie != null) {
-                        addRequestHeader("Cookie", cookie)
+                    CookieManager.getInstance().getCookie(uri.toString())?.let {
+                        addRequestHeader("Cookie", it)
                     }
-                    val fileName = URLUtil.guessFileName(url, contentDisposition, mimetype)
+                    val fileName = URLUtil.guessFileName(uri.toString(), contentDisposition, mimetype)
                     setTitle(fileName)
                     setDescription(getString(R.string.download_starting))
                     setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
@@ -375,14 +364,23 @@ class MainActivity : AppCompatActivity() {
                 val dm = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
                 dm.enqueue(request)
                 Toast.makeText(this, R.string.download_starting, Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                // Fallback to external view intent if DownloadManager fails
-                try {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                    startActivity(intent)
-                } catch (_: Exception) {}
+            } catch (_: Exception) {
+                Toast.makeText(this, R.string.download_starting, Toast.LENGTH_SHORT).show()
             }
         })
+    }
+
+    private fun isTrustedAudioRequest(request: PermissionRequest): Boolean {
+        val uri = request.origin
+        return uri != null &&
+            uri.scheme.equals("https", ignoreCase = true) &&
+            uri.host?.equals(TRUSTED_HOST, ignoreCase = true) == true &&
+            request.resources.toSet() == setOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE)
+    }
+
+    private fun isTrustedHttpsUri(uri: Uri): Boolean {
+        return uri.scheme.equals("https", ignoreCase = true) &&
+            uri.host?.equals(TRUSTED_HOST, ignoreCase = true) == true
     }
 
     private fun setupBackNavigation() {
@@ -409,13 +407,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isTrustedHost(host: String): Boolean {
-        return host == "synsound-beta.base44.app" ||
-               host.endsWith(".base44.app") ||
-               host.endsWith(".base44.com")
+        return host.equals(TRUSTED_HOST, ignoreCase = true)
     }
 
     private fun loadInitialUrl(intent: Intent?) {
-        val targetUrl = intent?.data?.toString() ?: SYN_SOUND_URL
+        val incomingUri = intent?.data
+        val targetUrl = if (incomingUri != null && isTrustedHttpsUri(incomingUri)) {
+            incomingUri.toString()
+        } else {
+            SYN_SOUND_URL
+        }
         webView.loadUrl(targetUrl)
     }
 
@@ -445,13 +446,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        // We do not call webView.onPause() here to ensure audio continues playing
-        // when the application loses focus or the screen is locked.
     }
 
     override fun onResume() {
         super.onResume()
-        // We do not call webView.onResume() here as we didn't pause it.
     }
 
     override fun onDestroy() {
@@ -467,7 +465,7 @@ class MainActivity : AppCompatActivity() {
         (this * resources.displayMetrics.density).toInt()
 
     companion object {
+        private const val TRUSTED_HOST = "synsound-beta.base44.app"
         const val SYN_SOUND_URL = "https://synsound-beta.base44.app"
     }
 }
-

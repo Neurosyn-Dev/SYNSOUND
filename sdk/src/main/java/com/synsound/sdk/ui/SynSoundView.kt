@@ -2,12 +2,10 @@ package com.synsound.sdk.ui
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.net.http.SslError
 import android.util.AttributeSet
-import android.view.LayoutInflater
 import android.view.View
 import android.webkit.CookieManager
 import android.webkit.PermissionRequest
@@ -29,7 +27,7 @@ import com.synsound.sdk.R
 
 /**
  * High-performance embeddable SynSound web platform view container with integrated
- * permission forwarding, download handling, error states, and session persistence.
+ * permission forwarding, error states, and session persistence.
  */
 class SynSoundView @JvmOverloads constructor(
     context: Context,
@@ -68,7 +66,6 @@ class SynSoundView @JvmOverloads constructor(
     var defaultUrl: String = DEFAULT_SYNSOUND_URL
 
     init {
-        // Inflate view layout programmatically or through standard elements
         swipeRefreshLayout = SwipeRefreshLayout(context).apply {
             layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
             setColorSchemeResources(R.color.syn_sdk_primary)
@@ -82,7 +79,6 @@ class SynSoundView @JvmOverloads constructor(
         swipeRefreshLayout.addView(webView)
         addView(swipeRefreshLayout)
 
-        // Progress bar
         progressBar = ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal).apply {
             layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, 8.dpToPx()).apply {
                 topMargin = 0
@@ -92,7 +88,6 @@ class SynSoundView @JvmOverloads constructor(
         }
         addView(progressBar)
 
-        // Error Container
         errorContainer = LinearLayout(context).apply {
             layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
             orientation = LinearLayout.VERTICAL
@@ -154,7 +149,9 @@ class SynSoundView @JvmOverloads constructor(
             cacheMode = WebSettings.LOAD_DEFAULT
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             allowFileAccess = false
-            allowContentAccess = true
+            allowContentAccess = false
+            setAllowFileAccessFromFileURLs(false)
+            setAllowUniversalAccessFromFileURLs(false)
             setSupportMultipleWindows(false)
             defaultTextEncodingName = "utf-8"
         }
@@ -175,12 +172,18 @@ class SynSoundView @JvmOverloads constructor(
             }
 
             override fun onPermissionRequest(request: PermissionRequest) {
-                val hasAudioRequest = request.resources.contains(PermissionRequest.RESOURCE_AUDIO_CAPTURE)
-                if (hasAudioRequest && permissionCallback != null) {
-                    permissionCallback?.onRequestAudioPermission(request)
-                } else {
-                    request.grant(request.resources)
+                if (!isTrustedAudioRequest(request)) {
+                    request.deny()
+                    return
                 }
+
+                val callback = permissionCallback
+                if (callback == null) {
+                    request.deny()
+                    return
+                }
+
+                callback.onRequestAudioPermission(request)
             }
 
             override fun onShowFileChooser(
@@ -254,9 +257,7 @@ class SynSoundView @JvmOverloads constructor(
     fun canGoBack(): Boolean = webView.canGoBack()
 
     fun goBack() {
-        if (webView.canGoBack()) {
-            webView.goBack()
-        }
+        if (webView.canGoBack()) webView.goBack()
     }
 
     fun reload() {
@@ -270,16 +271,23 @@ class SynSoundView @JvmOverloads constructor(
         errorContainer.visibility = View.VISIBLE
     }
 
+    private fun isTrustedAudioRequest(request: PermissionRequest): Boolean {
+        val uri = request.origin
+        return uri != null &&
+            uri.scheme.equals("https", ignoreCase = true) &&
+            uri.host?.equals(TRUSTED_HOST, ignoreCase = true) == true &&
+            request.resources.toSet() == setOf(PermissionRequest.RESOURCE_AUDIO_CAPTURE)
+    }
+
     private fun isTrustedHost(host: String): Boolean {
-        return host == "synsound-beta.base44.app" ||
-               host.endsWith(".base44.app") ||
-               host.endsWith(".base44.com")
+        return host == TRUSTED_HOST
     }
 
     private fun Int.dpToPx(): Int =
         (this * resources.displayMetrics.density).toInt()
 
     companion object {
+        private const val TRUSTED_HOST = "synsound-beta.base44.app"
         const val DEFAULT_SYNSOUND_URL = "https://synsound-beta.base44.app"
     }
 }

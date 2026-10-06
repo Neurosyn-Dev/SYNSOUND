@@ -14,7 +14,7 @@
         android:required="false" />
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:dataExtractionRules="@null"
         android:fullBackupContent="@null"
         android:icon="@mipmap/ic_launcher"

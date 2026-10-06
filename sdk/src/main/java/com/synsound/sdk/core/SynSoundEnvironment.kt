@@ -17,5 +17,14 @@ sealed class SynSoundEnvironment(val baseUrl: String, val wsUrl: String) {
     data class Custom(
         val customBaseUrl: String,
         val customWsUrl: String = customBaseUrl.replace("http://", "ws://").replace("https://", "wss://") + "/api/v1/stream"
-    ) : SynSoundEnvironment(customBaseUrl, customWsUrl)
+    ) : SynSoundEnvironment(customBaseUrl, customWsUrl) {
+        init {
+            require(customBaseUrl.startsWith("https://", ignoreCase = true)) {
+                "Custom SynSound base URL must use HTTPS"
+            }
+            require(customWsUrl.startsWith("wss://", ignoreCase = true)) {
+                "Custom SynSound WebSocket URL must use WSS"
+            }
+        }
+    }
 }
