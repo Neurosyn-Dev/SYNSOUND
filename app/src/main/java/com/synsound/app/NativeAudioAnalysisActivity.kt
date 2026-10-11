@@ -70,7 +70,7 @@ class NativeAudioAnalysisActivity : AppCompatActivity() {
         root.addView(title, matchWrap())
 
         val subtitle = TextView(this).apply {
-            text = "Analyze a PCM WAV file locally on this device. No microphone access or upload is used."
+            text = "Analyze a PCM WAV file locally on this device. This screen does not capture audio or upload the selected file. Stop any active web-app recording before using it."
             textSize = 14f
             setTextColor(0xFFB8C0CC.toInt())
             setPadding(0, dp(8), 0, dp(16))
