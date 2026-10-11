@@ -150,8 +150,6 @@ class SynSoundView @JvmOverloads constructor(
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             allowFileAccess = false
             allowContentAccess = false
-            setAllowFileAccessFromFileURLs(false)
-            setAllowUniversalAccessFromFileURLs(false)
             setSupportMultipleWindows(false)
             defaultTextEncodingName = "utf-8"
         }
