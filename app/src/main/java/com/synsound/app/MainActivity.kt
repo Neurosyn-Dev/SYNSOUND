@@ -194,6 +194,12 @@ class MainActivity : AppCompatActivity() {
                 bottomMargin = 16.dpToPx() + systemBars.bottom
             }
 
+            findViewById<MaterialButton>(R.id.btnNativeAnalyze)
+                .updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    marginEnd = 16.dpToPx() + systemBars.right
+                    bottomMargin = 16.dpToPx() + systemBars.bottom
+                }
+
             errorContainer.updatePadding(
                 top = systemBars.top + 16.dpToPx(),
                 bottom = systemBars.bottom + 16.dpToPx(),
