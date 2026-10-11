@@ -169,7 +169,7 @@ class NativeAudioAnalysisActivity : AppCompatActivity() {
         }
     }
 
-    private fun analyzeWav(bytes: ByteArray, displayName: String): String {
+    private suspend fun analyzeWav(bytes: ByteArray, displayName: String): String {
         val wav = parsePcmWav(bytes)
         val analyzer = AcousticAnalyzer()
         val detector = AcousticEventDetector(analyzer)
