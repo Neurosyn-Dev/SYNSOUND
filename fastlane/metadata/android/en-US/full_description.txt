@@ -5,6 +5,7 @@
 <li>Secure HTTPS-only WebView integration with strict trusted-origin navigation.</li>
 <li>Real-time microphone capture through the hosted SynSound web application when Android microphone permission is granted.</li>
 <li>Native file selection with multi-file support and secure URI access.</li>
+<li>Offline native analysis of uncompressed PCM 16-bit mono/stereo WAV files up to 64 MB, including duration, RMS/peak levels, and heuristic acoustic-event indicators. The selected file is analyzed locally and is not uploaded by this feature. Stop any active web-app recording before using it.</li>
 <li>Authenticated downloads from the trusted SynSound HTTPS origin, including legacy Android download handling.</li>
 <li>Secure SDK WebView permission forwarding with fail-closed behavior.</li>
 <li>HTTPS/WSS-only custom SDK transport configuration.</li>
@@ -33,4 +34,4 @@
 
 <p>Minimum Android version: Android 8.0 (API 26)<br>
 Target Android version: Android 15 (API 35)<br>
-Version: 1.0.2 (versionCode 3)</p>
+Version: 1.0.5 (versionCode 5)</p>
