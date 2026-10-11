@@ -1359,8 +1359,8 @@ Where browser technology cannot reliably provide required low-latency native aud
 | Android Language | Kotlin 2.0 |
 | Primary Android Technology | Android WebView |
 | Required Permission | `RECORD_AUDIO` |
-| Version | `1.0.2` |
-| Version Code | `3` |
+| Version | `1.0.4` |
+| Version Code | `4` |
 
 ---
 
@@ -1466,8 +1466,8 @@ The exact implementation language of individual Base44-generated web components 
 | Minimum SDK | 26 |
 | Target SDK | 35 |
 | Compile SDK | 35 |
-| Version | `1.0.2` |
-| Version Code | `3` |
+| Version | `1.0.4` |
+| Version Code | `4` |
 | Primary Permission | `RECORD_AUDIO` |
 | Android Technology | WebView + native integration |
 
@@ -1545,6 +1545,24 @@ Windows:
 ```
 
 Release signing credentials must be securely managed and must never be committed to the repository.
+
+### GitHub release signing setup
+
+GitHub Release APKs are signed with a persistent release keystore. CI deliberately does not create a temporary debug key or publish an unsigned APK as a release asset. Before creating a version tag, configure these repository Actions secrets under **Settings → Secrets and variables → Actions**:
+
+- `RELEASE_KEYSTORE_BASE64`: the base64-encoded contents of the release keystore file.
+- `RELEASE_STORE_PASSWORD`: the keystore password.
+- `RELEASE_KEY_ALIAS`: the signing key alias.
+- `RELEASE_KEY_PASSWORD`: the signing key password.
+
+Create the release keystore locally and store a secure backup outside the repository. For example:
+
+```bash
+keytool -genkeypair -v -keystore synsound-release.jks -alias synsound-release -keyalg RSA -keysize 2048 -validity 10000
+base64 -w 0 synsound-release.jks
+```
+
+Copy the base64 output into the `RELEASE_KEYSTORE_BASE64` secret and enter the same alias and passwords in their respective secrets. **Never commit the keystore or paste its contents into issues, pull requests, or chat.** Keep the same keystore for every GitHub APK release so future releases can update installations signed with it. The release workflow verifies that the APK signature is valid and that the Git tag matches the app's `versionName`; it stops instead of publishing if signing is not configured. F-Droid builds are a separate distribution channel and may use F-Droid's own signing key.
 
 ---
 
