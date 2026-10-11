@@ -213,8 +213,6 @@ class MainActivity : AppCompatActivity() {
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             allowFileAccess = false
             allowContentAccess = false
-            setAllowFileAccessFromFileURLs(false)
-            setAllowUniversalAccessFromFileURLs(false)
             setSupportMultipleWindows(false)
             defaultTextEncodingName = "utf-8"
         }
@@ -300,7 +298,6 @@ class MainActivity : AppCompatActivity() {
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val uri = request?.url ?: return false
-                val host = uri.host?.lowercase() ?: ""
                 val scheme = uri.scheme?.lowercase() ?: ""
 
                 if (scheme != "http" && scheme != "https") {
