@@ -38,6 +38,7 @@ jobs:
         with:
           name: test-results
           path: '**/build/reports/tests/'
+          if-no-files-found: warn
 
   build:
     name: Build Release APK
@@ -79,11 +80,22 @@ jobs:
           RELEASE_KEY_ALIAS: androiddebugkey
           RELEASE_KEY_PASSWORD: android
 
+      - name: Verify release APK exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          find app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' -print
+          test -n "$(find app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' -print -quit)" || {
+            echo "::error::Gradle completed but produced no APK in app/build/outputs/apk/release"
+            exit 1
+          }
+
       - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
           name: synsound-release-apk
-          path: app/build/outputs/apk/release/app-release.apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
           retention-days: 90
 
   release:
@@ -131,12 +143,23 @@ jobs:
 
       - name: Get version name
         id: version
-        run: echo "VERSION_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        shell: bash
+        run: echo "VERSION_NAME=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
-      - name: Rename APK
+      - name: Locate and rename APK
+        shell: bash
+        env:
+          VERSION_NAME: ${{ steps.version.outputs.VERSION_NAME }}
         run: |
-          mv app/build/outputs/apk/release/app-release.apk \
-             SynSound-${{ steps.version.outputs.VERSION_NAME }}-release.apk
+          set -euo pipefail
+          apk="$(find app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          if [[ -z "$apk" ]]; then
+            echo "::error::No release APK found. Files produced by Gradle:"
+            find app/build/outputs -type f -print || true
+            exit 1
+          fi
+          cp "$apk" "SynSound-${VERSION_NAME}-release.apk"
+          echo "Release asset prepared: SynSound-${VERSION_NAME}-release.apk (from $apk)"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
