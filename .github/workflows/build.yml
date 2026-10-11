@@ -178,10 +178,30 @@ jobs:
           test -s "$keystore"
           chmod 600 "$keystore"
 
+          # Resolve the actual private-key entry. A certificate-only alias cannot sign APKs.
+          keytool -list -v -keystore "$keystore" -storepass "$RELEASE_STORE_PASSWORD" > "$RUNNER_TEMP/keystore-list.txt"
+          mapfile -t private_key_aliases < <(awk -F': ' '/^Alias name: / { alias = $2 } /^Entry type: PrivateKeyEntry/ { print alias }' "$RUNNER_TEMP/keystore-list.txt")
+
+          if [[ "${#private_key_aliases[@]}" -eq 0 ]]; then
+            echo "::error::The configured release keystore contains no private-key entries. A certificate-only keystore cannot sign an APK."
+            exit 1
+          fi
+
+          signing_alias=""
+          if printf '%s\\n' "${private_key_aliases[@]}" | grep -Fxq "$RELEASE_KEY_ALIAS"; then
+            signing_alias="$RELEASE_KEY_ALIAS"
+          elif [[ "${#private_key_aliases[@]}" -eq 1 ]]; then
+            signing_alias="${private_key_aliases[0]}"
+            echo "::warning::RELEASE_KEY_ALIAS does not identify a private-key entry; using the only private-key alias found in the configured keystore."
+          else
+            echo "::error::RELEASE_KEY_ALIAS does not identify a private-key entry and the keystore has multiple private keys. Available aliases: ${private_key_aliases[*]}"
+            exit 1
+          fi
+
           "$ANDROID_HOME/build-tools/35.0.0/zipalign" -f -v 4 "$unsigned_apk" "$aligned_apk"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
             --ks "$keystore" \
-            --ks-key-alias "$RELEASE_KEY_ALIAS" \
+            --ks-key-alias "$signing_alias" \
             --ks-pass env:RELEASE_STORE_PASSWORD \
             --key-pass env:RELEASE_KEY_PASSWORD \
             --out "$output_apk" \
