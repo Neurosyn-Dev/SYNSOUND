@@ -1,7 +1,6 @@
 package com.synsound.app
 
 import android.content.ContentResolver
-import android.content.ContentUris
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -235,7 +234,7 @@ class NativeAudioAnalysisActivity : AppCompatActivity() {
         } else {
             eventCounts.entries
                 .sortedByDescending { it.value }
-                .joinToString("\n") { "• \${it.key}: \${it.value} frame(s)" }
+                .joinToString("\n") { "• ${it.key}: ${it.value} frame(s)" }
         }
 
         return buildString {
@@ -243,8 +242,8 @@ class NativeAudioAnalysisActivity : AppCompatActivity() {
             appendLine()
             appendLine("FILE")
             appendLine("Duration: $duration")
-            appendLine("Sample rate: \${wav.sampleRate} Hz")
-            appendLine("Channels: \${wav.channels} (downmixed to mono for analysis)")
+            appendLine("Sample rate: ${wav.sampleRate} Hz")
+            appendLine("Channels: ${wav.channels} (downmixed to mono for analysis)")
             appendLine("Encoding: PCM 16-bit")
             appendLine()
             appendLine("SIGNAL METRICS")
