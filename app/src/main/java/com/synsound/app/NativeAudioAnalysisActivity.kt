@@ -20,6 +20,7 @@ import com.google.android.material.button.MaterialButton
 import com.synsound.sdk.analysis.AcousticAnalyzer
 import com.synsound.sdk.analysis.AcousticEventDetector
 import com.synsound.sdk.audio.AudioFrame
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
@@ -153,17 +154,23 @@ class NativeAudioAnalysisActivity : AppCompatActivity() {
                 }
                 statusText.text = "Analysis complete · processed locally"
                 resultText.text = result
+            } catch (cancelled: CancellationException) {
+                throw cancelled
             } catch (error: Exception) {
-                statusText.text = "Analysis could not be completed"
-                resultText.text = error.message ?: "Unsupported or unreadable audio file."
-                Toast.makeText(
-                    this@NativeAudioAnalysisActivity,
-                    "Could not analyze this WAV file",
-                    Toast.LENGTH_SHORT
-                ).show()
+                if (!isFinishing && !isDestroyed) {
+                    statusText.text = "Analysis could not be completed"
+                    resultText.text = error.message ?: "Unsupported or unreadable audio file."
+                    Toast.makeText(
+                        this@NativeAudioAnalysisActivity,
+                        "Could not analyze this WAV file",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             } finally {
-                chooseButton.isEnabled = true
-                progress.visibility = View.GONE
+                if (!isFinishing && !isDestroyed) {
+                    chooseButton.isEnabled = true
+                    progress.visibility = View.GONE
+                }
             }
         }
     }
