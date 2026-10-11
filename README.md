@@ -1313,17 +1313,23 @@ SYNSOUND's broader performance objectives are:
 
 # Android Application
 
-The Android application is a lightweight WebView client for the hosted SYNSOUND web service.
+The Android application combines a WebView client for the hosted SYNSOUND service with native Android integration.
 
-The current Android release loads the SYNSOUND web application from:
+The hosted web application loads from:
 
 `https://synsound-beta.base44.app`
 
-The Android layer provides the native application shell, Android microphone permission handling, WebView integration, file selection and downloads, session persistence, navigation, and network/error recovery.
+The Android layer provides the application shell, WebView integration, microphone permission mediation for the trusted hosted origin, file selection and downloads, navigation, and network/error recovery.
 
-The native SDK is included in the repository, but the current Android activity does not start the SDK monitoring service or native visualization components. Those native components therefore should not be represented as features of the current Android APK.
+## Native Offline WAV Analysis (Android 1.0.5 candidate)
 
-**Current Android APK = WebView client for the hosted SYNSOUND service**
+The 1.0.5 candidate adds a native **Analyze WAV** screen that processes a selected audio file locally on the device. It supports uncompressed PCM 16-bit mono or stereo WAV files at 8–96 kHz, up to 64 MB. Results include duration, sample rate, overall RMS level, peak level, and heuristic acoustic-event indicators.
+
+This feature does not itself open a microphone stream or upload the selected file. Stop any active recording in the hosted web app before opening the native analysis screen. Event indicators are exploratory signal heuristics, not verified event identification or forensic conclusions.
+
+The native SDK is also included in the repository, but the live microphone monitoring service and native visualization components are not yet connected to the app's user-facing workflow. They should not be represented as working APK features until that integration is implemented and tested.
+
+**Android APK = hosted web client plus native offline WAV analysis (1.0.5 candidate)**
 
 **SYNSOUND Web/PWA = hosted application experience**
 
