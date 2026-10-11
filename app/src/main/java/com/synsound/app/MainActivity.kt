@@ -175,6 +175,10 @@ class MainActivity : AppCompatActivity() {
         btnNativeBack.setOnClickListener {
             handleBackAction()
         }
+
+        findViewById<MaterialButton>(R.id.btnNativeAnalyze).setOnClickListener {
+            startActivity(Intent(this, NativeAudioAnalysisActivity::class.java))
+        }
     }
 
     private fun setupInsets() {
