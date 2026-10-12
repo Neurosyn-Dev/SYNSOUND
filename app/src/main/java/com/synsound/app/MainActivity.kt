@@ -441,7 +441,15 @@ class MainActivity : AppCompatActivity() {
             nativeAudioExecutor.execute {
                 val payload = runCatching { JSONObject(rawMessage) }.getOrNull()
                     ?: return@execute
-                if (payload.optString("type") != "pcm16") return@execute
+                val messageType = payload.optString("type")
+                if (messageType == "state" && !payload.optBoolean("active", true)) {
+                    runOnUiThread {
+                        nativeAudioStatusHandler.removeCallbacks(hideNativeAudioStatus)
+                        nativeAudioStatusView?.visibility = View.GONE
+                    }
+                    return@execute
+                }
+                if (messageType != "pcm16") return@execute
 
                 val encoded = payload.optString("data")
                 if (encoded.isBlank() || encoded.length > MAX_ENCODED_PCM_CHARS) return@execute
@@ -679,6 +687,21 @@ class MainActivity : AppCompatActivity() {
               if (window.__synSoundNativeTapInstalled || !window.synSoundNative ||
                   !window.AudioContext || !window.AudioContext.prototype.createMediaStreamSource) return;
               window.__synSoundNativeTapInstalled = true;
+              var taps = window.__synSoundNativeTaps || (window.__synSoundNativeTaps = []);
+              function stopTap(tap) {
+                if (!tap || tap.stopped) return;
+                tap.stopped = true;
+                if (tap.processor) tap.processor.onaudioprocess = null;
+                try { tap.source.disconnect(tap.processor); } catch (_) {}
+                try { tap.processor.disconnect(); } catch (_) {}
+                try { tap.mute.disconnect(); } catch (_) {}
+                try {
+                  window.synSoundNative.postMessage(JSON.stringify({ type: "state", active: false }));
+                } catch (_) {}
+              }
+              window.addEventListener("pagehide", function () {
+                taps.slice().forEach(stopTap);
+              }, { once: true });
               var originalCreate = window.AudioContext.prototype.createMediaStreamSource;
               window.AudioContext.prototype.createMediaStreamSource = function (stream) {
                 var source = originalCreate.call(this, stream);
@@ -689,14 +712,41 @@ class MainActivity : AppCompatActivity() {
                   var processor = context.createScriptProcessor(4096, 1, 1);
                   var mute = context.createGain();
                   mute.gain.value = 0;
+                  var tap = {
+                    source: source,
+                    processor: processor,
+                    mute: mute,
+                    stream: stream,
+                    stopped: false
+                  };
                   processor.onaudioprocess = function (event) {
+                    if (tap.stopped) return;
+                    var tracks = stream.getAudioTracks();
+                    if (!tracks.some(function (track) { return track.readyState === "live"; })) {
+                      stopTap(tap);
+                      return;
+                    }
                     var input = event.inputBuffer.getChannelData(0);
                     var inputRate = event.inputBuffer.sampleRate;
                     var outputLength = Math.floor(input.length * 16000 / inputRate);
                     if (outputLength < 256) return;
                     var bytes = new Uint8Array(outputLength * 2);
+                    // Area-average each source interval before downsampling. This acts as a
+                    // simple low-pass filter and reduces aliasing versus nearest-neighbor picks.
+                    var ratio = inputRate / 16000;
                     for (var i = 0; i < outputLength; i++) {
-                      var sample = input[Math.min(input.length - 1, Math.floor(i * inputRate / 16000))] || 0;
+                      var start = i * ratio;
+                      var end = Math.min(input.length, (i + 1) * ratio);
+                      var first = Math.floor(start);
+                      var last = Math.min(input.length - 1, Math.ceil(end) - 1);
+                      var sum = 0;
+                      var weight = 0;
+                      for (var j = first; j <= last; j++) {
+                        var overlap = Math.max(0, Math.min(end, j + 1) - Math.max(start, j));
+                        sum += (input[j] || 0) * overlap;
+                        weight += overlap;
+                      }
+                      var sample = weight > 0 ? sum / weight : 0;
                       sample = Math.max(-1, Math.min(1, sample));
                       var value = (sample < 0 ? sample * 32768 : sample * 32767) | 0;
                       bytes[i * 2] = value & 255;
@@ -715,7 +765,12 @@ class MainActivity : AppCompatActivity() {
                   source.connect(processor);
                   processor.connect(mute);
                   mute.connect(context.destination);
-                  source.__synSoundNativeTap = { processor: processor, mute: mute };
+                  tap.stop = function () { stopTap(tap); };
+                  source.__synSoundNativeTap = tap;
+                  taps.push(tap);
+                  stream.getAudioTracks().forEach(function (track) {
+                    track.addEventListener("ended", function () { stopTap(tap); }, { once: true });
+                  });
                 } catch (_) {}
                 return source;
               };
