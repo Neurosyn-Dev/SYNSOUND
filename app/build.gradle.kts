@@ -29,7 +29,7 @@ android {
     buildTypes {
         debug {
             // Keep the native-audio test build separate from the stable release package.
-            applicationIdSuffix = ".native-test"
+            applicationIdSuffix = ".nativetest"
             isMinifyEnabled = false
             isDebuggable = true
         }
