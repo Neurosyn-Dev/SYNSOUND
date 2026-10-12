@@ -1344,6 +1344,20 @@ The Android WebView is configured for modern web applications with support for:
 
 Where browser technology cannot reliably provide required low-latency native audio processing, SYNSOUND can use an appropriate native integration, plugin, Web Audio, AudioWorklet, or bridge.
 
+## Native analysis of the existing Web Audio stream
+
+On supported Android System WebView versions, the wrapper registers an origin-restricted WebMessageListener for the exact trusted origin `https://synsound-beta.base44.app`. After the page loads, a small tap attaches to the existing `MediaStreamAudioSourceNode` created by the web app when the user starts microphone monitoring. It forwards bounded, mono PCM16 frames at 16 kHz to the native Kotlin acoustic event detector.
+
+This is a side branch of the web app's already-open microphone stream, not a second microphone capture. The tap's output is muted and does not replace or reroute the web DSP/output path. The native path performs heuristic acoustic event candidate detection only; it does not make definitive forensic identifications or run a second enhancement chain. A small native status chip reports live native analysis and the latest candidate.
+
+- No native `AudioRecord` instance is started by this bridge.
+- Raw PCM is processed in memory and is not written to disk by the bridge.
+- This bridge does not send PCM to a cloud endpoint.
+- Messages are accepted only from the trusted HTTPS origin and main frame, with sample-rate and payload-size checks.
+- If WebMessageListener is unavailable, this native tap remains inactive rather than falling back to an unrestricted JavaScript interface.
+
+The tap is installed only after the page has loaded; it becomes active when the web app creates a microphone-backed Web Audio source. The microphone permission remains controlled by the existing Android permission flow.
+
 ---
 
 # Android Specifications
@@ -1401,7 +1415,7 @@ Security measures include:
 - No hardcoded credentials or API keys
 - WebView debugging disabled in release builds
 - Restricted navigation to the SynSound service origin
-- No unnecessary JavaScript bridges
+- No unrestricted JavaScript interfaces; the native audio bridge uses an origin-restricted WebMessageListener
 
 The Android wrapper does not make a claim that microphone audio remains on-device. When microphone access is granted to the hosted web application, audio processing and network handling are controlled by that remote application and its service infrastructure.
 

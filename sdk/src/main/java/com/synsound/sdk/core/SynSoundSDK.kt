@@ -89,6 +89,18 @@ class SynSoundSDK private constructor(
         return SynSoundResult.Success(Unit)
     }
 
+    /**
+     * Analyze PCM frames supplied by the hosted Web Audio stream.
+     *
+     * This path deliberately does not open AudioRecord and does not run a second
+     * enhancement chain. It reuses the existing native event detector on frames
+     * tapped from the app's already-active microphone stream.
+     */
+    fun processExternalAudioFrame(frame: AudioFrame): List<AcousticEvent> {
+        if (!config.enableEventDetection) return emptyList()
+        return eventDetector.process(frame)
+    }
+
     fun stopAcousticMonitoring() {
         processingJob?.cancel()
         processingJob = null

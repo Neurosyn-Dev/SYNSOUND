@@ -7,6 +7,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import android.util.Base64
 import android.net.Uri
 import android.net.http.SslError
 import android.os.Build
@@ -14,6 +17,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
 import android.view.View
+import android.view.Gravity
 import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.DownloadListener
@@ -33,11 +37,13 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Toast
+import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.ViewCompat
@@ -45,7 +51,18 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import com.google.android.material.button.MaterialButton
+import com.synsound.sdk.analysis.AcousticEvent
+import com.synsound.sdk.analysis.AcousticEventType
+import com.synsound.sdk.audio.AudioFrame
+import com.synsound.sdk.core.NativeAudioPayloadLimits
+import com.synsound.sdk.core.SynSoundSDK
+import org.json.JSONObject
+import java.util.Locale
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicLong
 
 class MainActivity : AppCompatActivity() {
 
@@ -60,6 +77,13 @@ class MainActivity : AppCompatActivity() {
     private var pendingPermissionRequest: PermissionRequest? = null
     private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
     private var pendingDownload: DownloadRequestData? = null
+    private var nativeAudioStatusView: TextView? = null
+    private val nativeAudioFrameIndex = AtomicLong(0)
+    private val nativeAudioExecutor = Executors.newSingleThreadExecutor()
+    private var nativeAudioTapAtDocumentStart = false
+    private val nativeAudioStatusHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val hideNativeAudioStatus = Runnable { nativeAudioStatusView?.visibility = View.GONE }
+    private var nativeAudioBridgeInstalled = false
 
     private val downloadStoragePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -153,6 +177,8 @@ class MainActivity : AppCompatActivity() {
         btnNativeBack = findViewById(R.id.btnNativeBack)
         bottomNavContainer = findViewById(R.id.bottomNavContainer)
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout)
+
+        installNativeAudioStatusView()
 
         swipeRefreshLayout.setColorSchemeResources(R.color.syn_primary)
         swipeRefreshLayout.setProgressBackgroundColorSchemeResource(R.color.syn_surface)
@@ -332,6 +358,9 @@ class MainActivity : AppCompatActivity() {
                 progressBar.visibility = View.GONE
                 swipeRefreshLayout.isRefreshing = false
                 CookieManager.getInstance().flush()
+                if (nativeAudioBridgeInstalled && !nativeAudioTapAtDocumentStart && url != null && runCatching { isTrustedHttpsUri(Uri.parse(url)) }.getOrDefault(false)) {
+                    view?.evaluateJavascript(NATIVE_AUDIO_TAP_SCRIPT, null)
+                }
             }
 
             override fun onReceivedError(
@@ -387,6 +416,126 @@ class MainActivity : AppCompatActivity() {
                 enqueueDownload(download)
             }
         })
+        setupNativeAudioBridge()
+    }
+
+    private fun setupNativeAudioBridge() {
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) return
+
+        WebViewCompat.addWebMessageListener(
+            webView,
+            "synSoundNative",
+            setOf("https://$TRUSTED_HOST")
+        ) { _, message, sourceOrigin, isMainFrame, _ ->
+            if (!isMainFrame ||
+                !sourceOrigin.scheme.equals("https", ignoreCase = true) ||
+                !sourceOrigin.host.equals(TRUSTED_HOST, ignoreCase = true) ||
+                (sourceOrigin.port != -1 && sourceOrigin.port != 443)
+            ) {
+                return@addWebMessageListener
+            }
+
+            // WebMessageListener callbacks may run on the UI thread. Keep JSON/base64 decoding
+            // and acoustic analysis on a dedicated serial worker to avoid janking the WebView.
+            val rawMessage = message.data ?: return@addWebMessageListener
+            if (!NativeAudioPayloadLimits.isMessageLengthAllowed(rawMessage.length)) return@addWebMessageListener
+            nativeAudioExecutor.execute {
+                val payload = runCatching { JSONObject(rawMessage) }.getOrNull()
+                    ?: return@execute
+                val messageType = payload.optString("type")
+                if (messageType == "state" && !payload.optBoolean("active", true)) {
+                    runOnUiThread {
+                        nativeAudioStatusHandler.removeCallbacks(hideNativeAudioStatus)
+                        nativeAudioStatusView?.visibility = View.GONE
+                    }
+                    return@execute
+                }
+                if (messageType != "pcm16") return@execute
+
+                val encoded = payload.optString("data")
+                if (encoded.isBlank() || !NativeAudioPayloadLimits.isEncodedLengthAllowed(encoded.length)) return@execute
+                if (!NativeAudioPayloadLimits.isMetadataAllowed(
+                        payload.optInt("sampleRate", 0),
+                        payload.optInt("channels", 0)
+                    )
+                ) return@execute
+
+                val pcmData = runCatching { Base64.decode(encoded, Base64.DEFAULT) }.getOrNull()
+                    ?: return@execute
+                if (!NativeAudioPayloadLimits.isPcmByteCountAllowed(pcmData.size)) {
+                    return@execute
+                }
+
+                val frame = AudioFrame(
+                    pcmData = pcmData,
+                    sampleRate = NATIVE_SAMPLE_RATE,
+                    channelCount = 1,
+                    timestampMs = System.currentTimeMillis(),
+                    frameIndex = nativeAudioFrameIndex.incrementAndGet()
+                )
+                val events = runCatching {
+                    SynSoundSDK.getInstance().processExternalAudioFrame(frame)
+                }.getOrElse { return@execute }
+
+                runOnUiThread { updateNativeAudioStatus(frame, events) }
+            }
+        }
+        nativeAudioBridgeInstalled = true
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            runCatching {
+                WebViewCompat.addDocumentStartJavaScript(
+                    webView,
+                    NATIVE_AUDIO_TAP_SCRIPT,
+                    setOf("https://$TRUSTED_HOST")
+                )
+                nativeAudioTapAtDocumentStart = true
+            }
+        }
+    }
+
+    private fun installNativeAudioStatusView() {
+        val status = TextView(this).apply {
+            text = "NATIVE ANALYSIS · LIVE"
+            textSize = 11f
+            setTextColor(Color.WHITE)
+            setPadding(12.dpToPx(), 8.dpToPx(), 12.dpToPx(), 8.dpToPx())
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 18.dpToPx().toFloat()
+                setColor(Color.parseColor("#E612141A"))
+                setStroke(1.dpToPx(), ContextCompat.getColor(this@MainActivity, R.color.syn_primary))
+            }
+            elevation = 8.dpToPx().toFloat()
+            maxLines = 1
+            visibility = View.GONE
+            contentDescription = "Native acoustic analysis status"
+        }
+        val layoutParams = CoordinatorLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        ).apply {
+            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            bottomMargin = 76.dpToPx()
+            marginStart = 12.dpToPx()
+            marginEnd = 12.dpToPx()
+        }
+        findViewById<CoordinatorLayout>(R.id.rootCoordinator).addView(status, layoutParams)
+        nativeAudioStatusView = status
+    }
+
+    private fun updateNativeAudioStatus(frame: AudioFrame, events: List<AcousticEvent>) {
+        val candidate = events.lastOrNull { it.type != AcousticEventType.SILENCE_OR_DROPOUT }
+        val rms = String.format(Locale.US, "%.0f dBFS", frame.rmsDbfs)
+        nativeAudioStatusView?.apply {
+            text = if (candidate != null) {
+                "NATIVE CANDIDATE · ${candidate.type.displayName}"
+            } else {
+                "NATIVE ANALYSIS · LIVE · $rms"
+            }
+            visibility = View.VISIBLE
+        }
+        nativeAudioStatusHandler.removeCallbacks(hideNativeAudioStatus)
+        nativeAudioStatusHandler.postDelayed(hideNativeAudioStatus, NATIVE_STATUS_TIMEOUT_MS)
     }
 
     private fun enqueueDownload(download: DownloadRequestData) {
@@ -516,6 +665,8 @@ class MainActivity : AppCompatActivity() {
         fileUploadCallback?.onReceiveValue(null)
         fileUploadCallback = null
         pendingDownload = null
+        nativeAudioStatusHandler.removeCallbacks(hideNativeAudioStatus)
+        nativeAudioExecutor.shutdownNow()
         webView.destroy()
         super.onDestroy()
     }
@@ -526,5 +677,106 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val TRUSTED_HOST = "synsound-beta.base44.app"
         const val SYN_SOUND_URL = "https://synsound-beta.base44.app"
+        private const val NATIVE_SAMPLE_RATE = 16_000
+        private const val NATIVE_STATUS_TIMEOUT_MS = 1_500L
+
+        // A silent side branch taps the existing Web Audio microphone source. It never opens
+        // Android AudioRecord and does not change the app's audible DSP/output chain.
+        private const val NATIVE_AUDIO_TAP_SCRIPT = """
+            (function () {
+              if (window.__synSoundNativeTapInstalled || !window.synSoundNative ||
+                  !window.AudioContext || !window.AudioContext.prototype.createMediaStreamSource) return;
+              window.__synSoundNativeTapInstalled = true;
+              var taps = window.__synSoundNativeTaps || (window.__synSoundNativeTaps = []);
+              function stopTap(tap) {
+                if (!tap || tap.stopped) return;
+                tap.stopped = true;
+                if (tap.processor) tap.processor.onaudioprocess = null;
+                try { tap.source.disconnect(tap.processor); } catch (_) {}
+                try { tap.processor.disconnect(); } catch (_) {}
+                try { tap.mute.disconnect(); } catch (_) {}
+                if (taps.every(function (other) { return other.stopped; })) {
+                  try {
+                    window.synSoundNative.postMessage(JSON.stringify({ type: "state", active: false }));
+                  } catch (_) {}
+                }
+              }
+              window.addEventListener("pagehide", function () {
+                taps.slice().forEach(stopTap);
+              }, { once: true });
+              var originalCreate = window.AudioContext.prototype.createMediaStreamSource;
+              window.AudioContext.prototype.createMediaStreamSource = function (stream) {
+                var source = originalCreate.call(this, stream);
+                try {
+                  if (!stream || !stream.getAudioTracks || !stream.getAudioTracks().length ||
+                      source.__synSoundNativeTap) return source;
+                  var context = this;
+                  var processor = context.createScriptProcessor(4096, 1, 1);
+                  var mute = context.createGain();
+                  mute.gain.value = 0;
+                  var tap = {
+                    source: source,
+                    processor: processor,
+                    mute: mute,
+                    stream: stream,
+                    stopped: false
+                  };
+                  processor.onaudioprocess = function (event) {
+                    if (tap.stopped) return;
+                    var tracks = stream.getAudioTracks();
+                    if (!tracks.some(function (track) { return track.readyState === "live"; })) {
+                      stopTap(tap);
+                      return;
+                    }
+                    var input = event.inputBuffer.getChannelData(0);
+                    var inputRate = event.inputBuffer.sampleRate;
+                    var outputLength = Math.floor(input.length * 16000 / inputRate);
+                    if (outputLength < 256) return;
+                    var bytes = new Uint8Array(outputLength * 2);
+                    // Area-average each source interval before downsampling. This acts as a
+                    // simple low-pass filter and reduces aliasing versus nearest-neighbor picks.
+                    var ratio = inputRate / 16000;
+                    for (var i = 0; i < outputLength; i++) {
+                      var start = i * ratio;
+                      var end = Math.min(input.length, (i + 1) * ratio);
+                      var first = Math.floor(start);
+                      var last = Math.min(input.length - 1, Math.ceil(end) - 1);
+                      var sum = 0;
+                      var weight = 0;
+                      for (var j = first; j <= last; j++) {
+                        var overlap = Math.max(0, Math.min(end, j + 1) - Math.max(start, j));
+                        sum += (input[j] || 0) * overlap;
+                        weight += overlap;
+                      }
+                      var sample = weight > 0 ? sum / weight : 0;
+                      sample = Math.max(-1, Math.min(1, sample));
+                      var value = (sample < 0 ? sample * 32768 : sample * 32767) | 0;
+                      bytes[i * 2] = value & 255;
+                      bytes[i * 2 + 1] = (value >> 8) & 255;
+                    }
+                    var binary = "";
+                    for (var offset = 0; offset < bytes.length; offset += 0x8000) {
+                      binary += String.fromCharCode.apply(null, bytes.subarray(offset, Math.min(offset + 0x8000, bytes.length)));
+                    }
+                    try {
+                      window.synSoundNative.postMessage(JSON.stringify({
+                        type: "pcm16", sampleRate: 16000, channels: 1, data: btoa(binary)
+                      }));
+                    } catch (_) {}
+                  };
+                  source.connect(processor);
+                  processor.connect(mute);
+                  mute.connect(context.destination);
+                  tap.stop = function () { stopTap(tap); };
+                  source.__synSoundNativeTap = tap;
+                  taps.push(tap);
+                  stream.getAudioTracks().forEach(function (track) {
+                    track.addEventListener("ended", function () { stopTap(tap); }, { once: true });
+                  });
+                } catch (_) {}
+                return source;
+              };
+            })();
+        """
     }
 }
