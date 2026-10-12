@@ -437,7 +437,7 @@ class MainActivity : AppCompatActivity() {
             // WebMessageListener callbacks may run on the UI thread. Keep JSON/base64 decoding
             // and acoustic analysis on a dedicated serial worker to avoid janking the WebView.
             val rawMessage = message.data ?: return@addWebMessageListener
-            if (rawMessage.length > MAX_MESSAGE_CHARS) return@addWebMessageListener
+            if (!NativeAudioPayloadLimits.isMessageLengthAllowed(rawMessage.length)) return@addWebMessageListener
             nativeAudioExecutor.execute {
                 val payload = runCatching { JSONObject(rawMessage) }.getOrNull()
                     ?: return@execute
@@ -452,14 +452,16 @@ class MainActivity : AppCompatActivity() {
                 if (messageType != "pcm16") return@execute
 
                 val encoded = payload.optString("data")
-                if (encoded.isBlank() || encoded.length > MAX_ENCODED_PCM_CHARS) return@execute
-                if (payload.optInt("sampleRate", 0) != NATIVE_SAMPLE_RATE ||
-                    payload.optInt("channels", 0) != 1
+                if (encoded.isBlank() || !NativeAudioPayloadLimits.isEncodedLengthAllowed(encoded.length)) return@execute
+                if (!NativeAudioPayloadLimits.isMetadataAllowed(
+                        payload.optInt("sampleRate", 0),
+                        payload.optInt("channels", 0)
+                    )
                 ) return@execute
 
                 val pcmData = runCatching { Base64.decode(encoded, Base64.DEFAULT) }.getOrNull()
                     ?: return@execute
-                if (pcmData.isEmpty() || pcmData.size % 2 != 0 || pcmData.size > MAX_PCM_BYTES) {
+                if (!NativeAudioPayloadLimits.isPcmByteCountAllowed(pcmData.size)) {
                     return@execute
                 }
 
@@ -675,9 +677,6 @@ class MainActivity : AppCompatActivity() {
         private const val TRUSTED_HOST = "synsound-beta.base44.app"
         const val SYN_SOUND_URL = "https://synsound-beta.base44.app"
         private const val NATIVE_SAMPLE_RATE = 16_000
-        private const val MAX_PCM_BYTES = 16_000
-        private const val MAX_ENCODED_PCM_CHARS = 24_000
-        private const val MAX_MESSAGE_CHARS = 25_000
         private const val NATIVE_STATUS_TIMEOUT_MS = 1_500L
 
         // A silent side branch taps the existing Web Audio microphone source. It never opens
