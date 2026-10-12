@@ -57,6 +57,7 @@ import com.google.android.material.button.MaterialButton
 import com.synsound.sdk.analysis.AcousticEvent
 import com.synsound.sdk.analysis.AcousticEventType
 import com.synsound.sdk.audio.AudioFrame
+import com.synsound.sdk.core.NativeAudioPayloadLimits
 import com.synsound.sdk.core.SynSoundSDK
 import org.json.JSONObject
 import java.util.Locale
@@ -694,9 +695,11 @@ class MainActivity : AppCompatActivity() {
                 try { tap.source.disconnect(tap.processor); } catch (_) {}
                 try { tap.processor.disconnect(); } catch (_) {}
                 try { tap.mute.disconnect(); } catch (_) {}
-                try {
-                  window.synSoundNative.postMessage(JSON.stringify({ type: "state", active: false }));
-                } catch (_) {}
+                if (taps.every(function (other) { return other.stopped; })) {
+                  try {
+                    window.synSoundNative.postMessage(JSON.stringify({ type: "state", active: false }));
+                  } catch (_) {}
+                }
               }
               window.addEventListener("pagehide", function () {
                 taps.slice().forEach(stopTap);
