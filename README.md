@@ -1321,11 +1321,11 @@ The current Android release loads the SYNSOUND web application from:
 
 The Android layer provides the native application shell, Android microphone permission handling, WebView integration, file selection and downloads, session persistence, navigation, and network/error recovery.
 
-The native SDK is included in the repository, but the current Android activity does not start the SDK monitoring service or native visualization components. Those native components therefore should not be represented as features of the current Android APK.
+The Android wrapper now includes a native acoustic-event analysis tap integrated with the hosted app's existing Web Audio microphone stream. When microphone monitoring is active, the tap forwards bounded 16 kHz mono PCM frames through an origin-restricted AndroidX WebMessageListener to a Kotlin heuristic event detector and displays a native status indicator. It does not open a second microphone capture, replace the web audio path, or provide definitive forensic identification. Native visualization components and a separate native enhancement chain are not claimed as release features.
 
-**Current Android APK = WebView client for the hosted SYNSOUND service**
+**Current Android APK = hosted WebView application plus a validated native acoustic-analysis side path**
 
-**SYNSOUND Web/PWA = hosted application experience**
+**SYNSOUND Web/PWA = hosted application experience; the hosted service remains a network dependency**
 
 ---
 
@@ -1373,8 +1373,8 @@ The tap is installed only after the page has loaded; it becomes active when the 
 | Android Language | Kotlin 2.0 |
 | Primary Android Technology | Android WebView |
 | Required Permission | `RECORD_AUDIO` |
-| Version | `1.0.4` |
-| Version Code | `4` |
+| Version | `1.0.5` |
+| Version Code | `5` |
 
 ---
 
@@ -1736,10 +1736,11 @@ Heavy asynchronous work must not interrupt recording or monitoring.
 
 # Current Development Status
 
-**Branch:** Beta  
+**Current Android release:** 1.0.5  
+**Version code:** 5  
 **Stage:** Active Beta Development
 
-The Beta branch contains the newest architectural improvements and feature development.
+Version 1.0.5 includes the native acoustic-analysis tap described above. Its release workflow passed unit tests, native-audio test APK build, release build, signing, and publishing. The native feature has passed device lifecycle smoke checks; formal spectral-quality validation has not been completed, and event labels remain heuristic. The F-Droid inclusion request is under review; successful metadata/build CI does not itself mean the app is already available in the official F-Droid repository.
 
 Current priorities include:
 
