@@ -60,6 +60,7 @@ import com.synsound.sdk.audio.AudioFrame
 import com.synsound.sdk.core.SynSoundSDK
 import org.json.JSONObject
 import java.util.Locale
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
 
 class MainActivity : AppCompatActivity() {
@@ -77,6 +78,8 @@ class MainActivity : AppCompatActivity() {
     private var pendingDownload: DownloadRequestData? = null
     private var nativeAudioStatusView: TextView? = null
     private val nativeAudioFrameIndex = AtomicLong(0)
+    private val nativeAudioExecutor = Executors.newSingleThreadExecutor()
+    private var nativeAudioTapAtDocumentStart = false
     private val nativeAudioStatusHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val hideNativeAudioStatus = Runnable { nativeAudioStatusView?.visibility = View.GONE }
     private var nativeAudioBridgeInstalled = false
@@ -354,7 +357,7 @@ class MainActivity : AppCompatActivity() {
                 progressBar.visibility = View.GONE
                 swipeRefreshLayout.isRefreshing = false
                 CookieManager.getInstance().flush()
-                if (nativeAudioBridgeInstalled && url != null && runCatching { isTrustedHttpsUri(Uri.parse(url)) }.getOrDefault(false)) {
+                if (nativeAudioBridgeInstalled && !nativeAudioTapAtDocumentStart && url != null && runCatching { isTrustedHttpsUri(Uri.parse(url)) }.getOrDefault(false)) {
                     view?.evaluateJavascript(NATIVE_AUDIO_TAP_SCRIPT, null)
                 }
             }
@@ -431,38 +434,52 @@ class MainActivity : AppCompatActivity() {
                 return@addWebMessageListener
             }
 
-            val payload = runCatching { JSONObject(message.data ?: "") }.getOrNull()
-                ?: return@addWebMessageListener
-            if (payload.optString("type") != "pcm16") return@addWebMessageListener
+            // WebMessageListener callbacks may run on the UI thread. Keep JSON/base64 decoding
+            // and acoustic analysis on a dedicated serial worker to avoid janking the WebView.
+            val rawMessage = message.data ?: return@addWebMessageListener
+            if (rawMessage.length > MAX_MESSAGE_CHARS) return@addWebMessageListener
+            nativeAudioExecutor.execute {
+                val payload = runCatching { JSONObject(rawMessage) }.getOrNull()
+                    ?: return@execute
+                if (payload.optString("type") != "pcm16") return@execute
 
-            val encoded = payload.optString("data")
-            if (encoded.isBlank() || encoded.length > MAX_ENCODED_PCM_CHARS) return@addWebMessageListener
-            if (payload.optInt("sampleRate", 0) != NATIVE_SAMPLE_RATE ||
-                payload.optInt("channels", 0) != 1
-            ) {
-                return@addWebMessageListener
+                val encoded = payload.optString("data")
+                if (encoded.isBlank() || encoded.length > MAX_ENCODED_PCM_CHARS) return@execute
+                if (payload.optInt("sampleRate", 0) != NATIVE_SAMPLE_RATE ||
+                    payload.optInt("channels", 0) != 1
+                ) return@execute
+
+                val pcmData = runCatching { Base64.decode(encoded, Base64.DEFAULT) }.getOrNull()
+                    ?: return@execute
+                if (pcmData.isEmpty() || pcmData.size % 2 != 0 || pcmData.size > MAX_PCM_BYTES) {
+                    return@execute
+                }
+
+                val frame = AudioFrame(
+                    pcmData = pcmData,
+                    sampleRate = NATIVE_SAMPLE_RATE,
+                    channelCount = 1,
+                    timestampMs = System.currentTimeMillis(),
+                    frameIndex = nativeAudioFrameIndex.incrementAndGet()
+                )
+                val events = runCatching {
+                    SynSoundSDK.getInstance().processExternalAudioFrame(frame)
+                }.getOrElse { return@execute }
+
+                runOnUiThread { updateNativeAudioStatus(frame, events) }
             }
-
-            val pcmData = runCatching { Base64.decode(encoded, Base64.DEFAULT) }.getOrNull()
-                ?: return@addWebMessageListener
-            if (pcmData.isEmpty() || pcmData.size % 2 != 0 || pcmData.size > MAX_PCM_BYTES) {
-                return@addWebMessageListener
-            }
-
-            val frame = AudioFrame(
-                pcmData = pcmData,
-                sampleRate = NATIVE_SAMPLE_RATE,
-                channelCount = 1,
-                timestampMs = System.currentTimeMillis(),
-                frameIndex = nativeAudioFrameIndex.incrementAndGet()
-            )
-            val events = runCatching {
-                SynSoundSDK.getInstance().processExternalAudioFrame(frame)
-            }.getOrElse { return@addWebMessageListener }
-
-            runOnUiThread { updateNativeAudioStatus(frame, events) }
         }
         nativeAudioBridgeInstalled = true
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            runCatching {
+                WebViewCompat.addDocumentStartJavaScript(
+                    webView,
+                    NATIVE_AUDIO_TAP_SCRIPT,
+                    setOf("https://$TRUSTED_HOST")
+                )
+                nativeAudioTapAtDocumentStart = true
+            }
+        }
     }
 
     private fun installNativeAudioStatusView() {
@@ -638,6 +655,7 @@ class MainActivity : AppCompatActivity() {
         fileUploadCallback = null
         pendingDownload = null
         nativeAudioStatusHandler.removeCallbacks(hideNativeAudioStatus)
+        nativeAudioExecutor.shutdownNow()
         webView.destroy()
         super.onDestroy()
     }
@@ -651,6 +669,7 @@ class MainActivity : AppCompatActivity() {
         private const val NATIVE_SAMPLE_RATE = 16_000
         private const val MAX_PCM_BYTES = 16_000
         private const val MAX_ENCODED_PCM_CHARS = 24_000
+        private const val MAX_MESSAGE_CHARS = 25_000
         private const val NATIVE_STATUS_TIMEOUT_MS = 1_500L
 
         // A silent side branch taps the existing Web Audio microphone source. It never opens
