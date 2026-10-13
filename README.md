@@ -1325,6 +1325,14 @@ The Android wrapper now includes a native acoustic-event analysis tap integrated
 
 **Current Android APK = hosted WebView application plus a validated native acoustic-analysis side path**
 
+## Native Offline WAV Analysis (Android 1.0.6 candidate)
+
+The 1.0.6 candidate adds a native **Analyze WAV** screen that processes a selected audio file locally on the device. It supports uncompressed PCM 16-bit mono or stereo WAV files at 8–96 kHz, up to 64 MB. Results include duration, sample rate, overall RMS level, peak level, and heuristic acoustic-event indicators.
+
+This file-analysis feature does not open a microphone stream or upload the selected file. Stop any active recording in the hosted web app before opening the native analysis screen. Event indicators are exploratory signal heuristics, not verified event identification or forensic conclusions.
+
+**Android APK = hosted web client plus native offline WAV analysis (1.0.6 candidate)**
+
 **SYNSOUND Web/PWA = hosted application experience; the hosted service remains a network dependency**
 
 ---
@@ -1373,8 +1381,8 @@ The tap is installed only after the page has loaded; it becomes active when the 
 | Android Language | Kotlin 2.0 |
 | Primary Android Technology | Android WebView |
 | Required Permission | `RECORD_AUDIO` |
-| Version | `1.0.5` |
-| Version Code | `5` |
+| Version | `1.0.6` |
+| Version Code | `6` |
 
 ---
 
@@ -1480,8 +1488,8 @@ The exact implementation language of individual Base44-generated web components 
 | Minimum SDK | 26 |
 | Target SDK | 35 |
 | Compile SDK | 35 |
-| Version | `1.0.5` |
-| Version Code | `4` |
+| Version | `1.0.6` |
+| Version Code | `6` |
 | Primary Permission | `RECORD_AUDIO` |
 | Android Technology | WebView + native integration |
 
