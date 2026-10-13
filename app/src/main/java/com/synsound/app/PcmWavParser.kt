@@ -13,13 +13,20 @@ internal object PcmWavParser {
         val dataLength: Int
     )
 
-    fun parse(bytes: ByteArray): WavInfo {
-        if (bytes.size < 44 ||
+    fun parse(bytes: ByteArray, validLength: Int = bytes.size): WavInfo {
+        if (validLength < 44 || validLength > bytes.size ||
             ascii(bytes, 0, 4) != "RIFF" ||
             ascii(bytes, 8, 4) != "WAVE"
         ) {
             throw IllegalArgumentException("This file is not a valid RIFF/WAVE file.")
         }
+
+        val declaredRiffSize = readIntLE(bytes, 4).toLong() and 0xFFFFFFFFL
+        val riffEndLong = declaredRiffSize + 8L
+        if (declaredRiffSize < 36L || riffEndLong > validLength.toLong()) {
+            throw IllegalArgumentException("The WAV RIFF length is invalid or truncated.")
+        }
+        val riffEnd = riffEndLong.toInt()
 
         var offset = 12
         var formatFound = false
@@ -30,11 +37,12 @@ internal object PcmWavParser {
         var bitsPerSample = 0
         var audioFormat = 0
 
-        while (offset + 8 <= bytes.size) {
+        while (offset.toLong() + 8L <= riffEnd.toLong()) {
             val chunkId = ascii(bytes, offset, 4)
             val chunkSize = readIntLE(bytes, offset + 4).toLong() and 0xFFFFFFFFL
             val chunkStart = offset + 8
-            if (chunkSize > bytes.size.toLong() || chunkStart.toLong() + chunkSize > bytes.size.toLong()) {
+            val nextOffset = chunkStart.toLong() + chunkSize + (chunkSize and 1L)
+            if (chunkStart.toLong() + chunkSize > riffEnd.toLong() || nextOffset > riffEnd.toLong()) {
                 throw IllegalArgumentException("The WAV file contains an invalid chunk length.")
             }
 
@@ -53,7 +61,7 @@ internal object PcmWavParser {
                 }
             }
 
-            offset = chunkStart + chunkSize.toInt() + (chunkSize.toInt() and 1)
+            offset = nextOffset.toInt()
             if (formatFound && dataOffset >= 0) break
         }
 
