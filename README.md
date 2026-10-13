@@ -10,15 +10,13 @@
 [![Base44](https://img.shields.io/badge/Built%20With-Base44-111111.svg)](https://base44.com/)
 [![Web Audio](https://img.shields.io/badge/Audio-Web%20Audio%20API-orange.svg)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
 [![AudioWorklet](https://img.shields.io/badge/Real--Time-AudioWorklet-yellow.svg)](https://developer.mozilla.org/en-US/docs/Web/API/AudioWorklet)
-[![F-Droid](https://img.shields.io/f-droid/v/com.synsound.app.svg?logo=f-droid)](https://f-droid.org/packages/com.synsound.app/)
+**F-Droid:** [Submission !47018 is under review](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/47018)
 [![Build](https://github.com/Neurosyn-Dev/SYNSOUND/actions/workflows/build.yml/badge.svg)](https://github.com/Neurosyn-Dev/SYNSOUND/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/com.synsound.app/)
+SYNSOUND is a hosted web/PWA acoustic-analysis application paired with an Android WebView client and Kotlin integration layer. The hosted web application provides the main interface and most audio-processing workflows; the Android package adds a secure native shell and a limited set of Android-specific capabilities.
 
-SYNSOUND is a professional real-time acoustic intelligence workstation designed for Android and modern web browsers. It combines continuous audio capture, live DSP, audio enhancement, speech intelligence, recording, forensic workflows, spectral analysis, visualization, mastering, AI-assisted analysis, environmental monitoring, and infrasonic/ultrasonic investigation in one unified system.
-
-SYNSOUND is a hybrid platform: the web/PWA application is developed through Base44 and modern browser audio technologies, while the Android application provides a dedicated native environment and Kotlin-based Android integration.
+**Important scope distinction:** this repository's Android APK is not a fully native implementation of every DSP, mastering, speech, visualization, or forensic workflow described in the platform documentation. The current published Android release is **1.0.5 (versionCode 5)**. It includes an origin-restricted native acoustic-analysis tap that observes the hosted app's already-active Web Audio microphone stream and produces heuristic event candidates. It does not open a second microphone capture, and its labels are not definitive forensic identifications.
 
 ---
 
@@ -105,7 +103,9 @@ The project is designed to evolve into a scalable professional acoustic intellig
 
 # Core Capabilities
 
-SYNSOUND includes or is designed to support:
+The following list describes the hosted SYNSOUND web/PWA application's feature scope and intended platform capabilities. It is **not** a claim that every item is implemented natively in Android or independently validated in the Android wrapper. Native Android release behavior is documented separately below.
+
+Hosted web/PWA capabilities include or are designed to support:
 
 - Persistent microphone monitoring
 - Real-time recording
@@ -1736,25 +1736,24 @@ Heavy asynchronous work must not interrupt recording or monitoring.
 
 # Current Development Status
 
-**Current Android release:** 1.0.5  
+**Current published Android release:** 1.0.5  
 **Version code:** 5  
-**Stage:** Active Beta Development
+**Stage:** Active beta development
 
-Version 1.0.5 includes the native acoustic-analysis tap described above. Its release workflow passed unit tests, native-audio test APK build, release build, signing, and publishing. The native feature has passed device lifecycle smoke checks; formal spectral-quality validation has not been completed, and event labels remain heuristic. The F-Droid inclusion request is under review; successful metadata/build CI does not itself mean the app is already available in the official F-Droid repository.
+Version 1.0.5 includes the native acoustic-analysis tap described above. The release workflow passed unit tests, native-audio test APK build, release build, signing, and publishing. Device lifecycle smoke checks covered microphone monitoring start/stop, the native indicator, restart, and page reload. Formal spectral-quality validation has not been completed, so the event labels remain heuristic and should not be treated as verified classifications.
+
+**Native offline WAV analysis is not in the published release.** [PR #11](https://github.com/Neurosyn-Dev/SYNSOUND/pull/11) is an open draft for a 1.0.6 / versionCode 6 candidate. It adds a native screen for local analysis of uncompressed PCM 16-bit mono/stereo WAV files (8–96 kHz, up to 64 MB), with RIFF boundary checks, bounded reads, parser regression tests, and no file upload. Its CI/unit tests and debug APK build passed on the reviewed branch, but the PR must remain a candidate until real-device or emulator smoke testing is completed. [PR #8](https://github.com/Neurosyn-Dev/SYNSOUND/pull/8) is closed as superseded by PR #11.
+
+**F-Droid status:** [fdroiddata MR !47018](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/47018) remains open for maintainer review. The v1.0.5 recipe's latest official pipeline passed, including the F-Droid build and metadata checks, but a passing pipeline is not acceptance into the official F-Droid repository. Byte-for-byte reproducible-build comparison remains unverified. The latest MR discussion says testing is temporarily paused while the hosted GUI update is finished; the MR's pinned 1.0.5 source and metadata have not been updated to the 1.0.6 candidate.
 
 Current priorities include:
 
-- Stability
-- Performance
-- User experience
-- DSP expansion
-- AI integration
-- Documentation
-- Advanced equalization
-- Speech intelligence
-- Forensic enhancement
-- SYN-ENGINE
-- Mobile optimization
+- Stability and performance
+- Hosted GUI user experience and regression testing
+- Android WebView and microphone-permission boundaries
+- Native WAV parser/device smoke testing for PR #11
+- Accurate documentation of hosted-service dependencies and privacy boundaries
+- F-Droid maintainer review
 
 Beta builds may contain incomplete or experimental functionality, changing layouts, rendering issues, and ongoing performance tuning.
 
@@ -1858,8 +1857,8 @@ https://base44.com/
 **Android Project:**  
 This repository
 
-**F-Droid:**  
-https://f-droid.org/packages/com.synsound.app/
+**F-Droid submission:**  
+https://gitlab.com/fdroid/fdroiddata/-/merge_requests/47018
 
 ---
 
