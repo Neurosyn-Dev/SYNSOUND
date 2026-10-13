@@ -34,4 +34,4 @@
 
 <p>Minimum Android version: Android 8.0 (API 26)<br>
 Target Android version: Android 15 (API 35)<br>
-Version: 1.0.5 (versionCode 5)</p>
+Version: 1.0.6 (versionCode 6)</p>
