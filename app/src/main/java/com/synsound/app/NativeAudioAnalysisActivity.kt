@@ -32,6 +32,12 @@ import kotlin.coroutines.coroutineContext
 import kotlin.math.max
 import kotlin.math.sqrt
 
+private data class BoundedAudioBytes(val buffer: ByteArray, val length: Int)
+
+private class ExposedByteArrayOutputStream(initialSize: Int) : ByteArrayOutputStream(initialSize) {
+    fun result(): BoundedAudioBytes = BoundedAudioBytes(buf, count)
+}
+
 /**
  * Offline, on-device analysis of 16-bit PCM WAV files.
  *
@@ -149,8 +155,8 @@ class NativeAudioAnalysisActivity : AppCompatActivity() {
             try {
                 val result = withContext(Dispatchers.IO) {
                     val displayName = getDisplayName(contentResolver, uri)
-                    val bytes = readBounded(contentResolver, uri, MAX_FILE_BYTES)
-                    analyzeWav(bytes, displayName)
+                    val audio = readBounded(contentResolver, uri, MAX_FILE_BYTES)
+                    analyzeWav(audio.buffer, audio.length, displayName)
                 }
                 statusText.text = "Analysis complete · processed locally"
                 resultText.text = result
@@ -175,8 +181,8 @@ class NativeAudioAnalysisActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun analyzeWav(bytes: ByteArray, displayName: String): String {
-        val wav = PcmWavParser.parse(bytes)
+    private suspend fun analyzeWav(bytes: ByteArray, validLength: Int, displayName: String): String {
+        val wav = PcmWavParser.parse(bytes, validLength)
         val analyzer = AcousticAnalyzer()
         val detector = AcousticEventDetector(analyzer)
         val eventCounts = linkedMapOf<String, Int>()
@@ -265,22 +271,37 @@ class NativeAudioAnalysisActivity : AppCompatActivity() {
         }
     }
 
-    private fun readBounded(resolver: ContentResolver, uri: Uri, limit: Int): ByteArray {
-        val input = resolver.openInputStream(uri) ?: throw IllegalArgumentException("The selected file could not be opened.")
+    private fun readBounded(resolver: ContentResolver, uri: Uri, limit: Int): BoundedAudioBytes {
+        val reportedSize = resolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)?.use { cursor ->
+            if (!cursor.moveToFirst()) null else {
+                val index = cursor.getColumnIndex(OpenableColumns.SIZE)
+                if (index < 0 || cursor.isNull(index)) null else cursor.getLong(index)
+            }
+        }
+        if (reportedSize != null && reportedSize > limit.toLong()) {
+            throw IllegalArgumentException("This first version supports WAV files up to 64 MB.")
+        }
+        val initialCapacity = if (reportedSize != null && reportedSize in 1..limit.toLong()) {
+            reportedSize.toInt()
+        } else {
+            8192
+        }
+        val input = resolver.openInputStream(uri)
+            ?: throw IllegalArgumentException("The selected file could not be opened.")
         input.use { stream ->
-            val output = ByteArrayOutputStream()
+            val output = ExposedByteArrayOutputStream(initialCapacity)
             val buffer = ByteArray(8192)
-            var total = 0
+            var total = 0L
             while (true) {
                 val read = stream.read(buffer)
                 if (read < 0) break
-                total += read
-                if (total > limit) {
+                total += read.toLong()
+                if (total > limit.toLong()) {
                     throw IllegalArgumentException("This first version supports WAV files up to 64 MB.")
                 }
                 output.write(buffer, 0, read)
             }
-            return output.toByteArray()
+            return output.result()
         }
     }
 
