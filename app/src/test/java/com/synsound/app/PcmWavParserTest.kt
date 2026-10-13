@@ -40,6 +40,42 @@ class PcmWavParserTest {
         PcmWavParser.parse(bytes)
     }
 
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsDeclaredRiffLengthBeyondAvailableBytes() {
+        val bytes = makeWav(channels = 1, sampleRate = 16000, bitsPerSample = 16, audioFormat = 1, data = ByteArray(4))
+        ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).putInt(4, bytes.size + 100)
+        PcmWavParser.parse(bytes)
+    }
+
+    @Test
+    fun parsesOnlyTheValidPortionOfAnExpandedReadBuffer() {
+        val wav = makeWav(channels = 1, sampleRate = 16000, bitsPerSample = 16, audioFormat = 1, data = ByteArray(4))
+        val expanded = wav.copyOf(wav.size + 4096)
+        val parsed = PcmWavParser.parse(expanded, wav.size)
+        assertEquals(4, parsed.dataLength)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsRiffTruncatedByLogicalLength() {
+        val wav = makeWav(channels = 1, sampleRate = 16000, bitsPerSample = 16, audioFormat = 1, data = ByteArray(4))
+        PcmWavParser.parse(wav.copyOf(wav.size + 4096), wav.size - 1)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsUnsupportedChannelCount() {
+        PcmWavParser.parse(makeWav(channels = 3, sampleRate = 16000, bitsPerSample = 16, audioFormat = 1, data = ByteArray(6)))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsSampleRateOutsideSupportedRange() {
+        PcmWavParser.parse(makeWav(channels = 1, sampleRate = 192000, bitsPerSample = 16, audioFormat = 1, data = ByteArray(4)))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsEmptyAudioData() {
+        PcmWavParser.parse(makeWav(channels = 1, sampleRate = 16000, bitsPerSample = 16, audioFormat = 1, data = ByteArray(0)))
+    }
+
     private fun makeWav(
         channels: Int,
         sampleRate: Int,
