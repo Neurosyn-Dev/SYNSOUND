@@ -116,4 +116,19 @@
             app:tint="@color/syn_text_primary" />
     </FrameLayout>
 
+    <!-- Native offline WAV analysis entry point -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnNativeAnalyze"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:elevation="6dp"
+        android:text="@string/btn_native_analysis"
+        android:textAllCaps="false"
+        android:textColor="@color/syn_on_primary"
+        app:backgroundTint="@color/syn_primary"
+        app:cornerRadius="24dp" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
