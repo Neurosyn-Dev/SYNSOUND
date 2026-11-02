@@ -34,6 +34,8 @@ internal object PcmWavParser {
         var dataLength = 0
         var channels = 0
         var sampleRate = 0
+        var byteRate = 0
+        var blockAlign = 0
         var bitsPerSample = 0
         var audioFormat = 0
 
@@ -52,6 +54,8 @@ internal object PcmWavParser {
                     audioFormat = readShortLE(bytes, chunkStart).toInt() and 0xFFFF
                     channels = readShortLE(bytes, chunkStart + 2).toInt() and 0xFFFF
                     sampleRate = readIntLE(bytes, chunkStart + 4)
+                    byteRate = readIntLE(bytes, chunkStart + 8)
+                    blockAlign = readShortLE(bytes, chunkStart + 12).toInt() and 0xFFFF
                     bitsPerSample = readShortLE(bytes, chunkStart + 14).toInt() and 0xFFFF
                     formatFound = true
                 }
@@ -77,7 +81,16 @@ internal object PcmWavParser {
         if (sampleRate !in 8000..96000) {
             throw IllegalArgumentException("Sample rates from 8,000 to 96,000 Hz are supported.")
         }
-        if (dataLength <= 0 || dataLength % (channels * 2) != 0) {
+
+        val expectedBlockAlign = channels * 2
+        if (blockAlign != expectedBlockAlign) {
+            throw IllegalArgumentException("The WAV block-alignment value does not match its channel and sample format.")
+        }
+        val expectedByteRate = sampleRate.toLong() * expectedBlockAlign
+        if (byteRate.toLong() != expectedByteRate) {
+            throw IllegalArgumentException("The WAV byte-rate value does not match its sample rate and block alignment.")
+        }
+        if (dataLength <= 0 || dataLength % expectedBlockAlign != 0) {
             throw IllegalArgumentException("The WAV audio-data chunk is empty or incomplete.")
         }
 
