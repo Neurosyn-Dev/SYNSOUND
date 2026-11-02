@@ -1,0 +1,5 @@
+SynSound 1.0.6: Native offline WAV analysis.
+- Adds on-device analysis for uncompressed PCM 16-bit mono/stereo WAV files.
+- Validates RIFF/WAVE declared lengths and chunk boundaries before processing.
+- Bounds input reads and avoids duplicating the full audio buffer in memory.
+- Event indicators are heuristic signals, not verified forensic conclusions.

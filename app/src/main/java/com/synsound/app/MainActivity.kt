@@ -201,6 +201,10 @@ class MainActivity : AppCompatActivity() {
         btnNativeBack.setOnClickListener {
             handleBackAction()
         }
+
+        findViewById<MaterialButton>(R.id.btnNativeAnalyze).setOnClickListener {
+            startActivity(Intent(this, NativeAudioAnalysisActivity::class.java))
+        }
     }
 
     private fun setupInsets() {
@@ -215,6 +219,12 @@ class MainActivity : AppCompatActivity() {
                 marginStart = 16.dpToPx() + systemBars.left
                 bottomMargin = 16.dpToPx() + systemBars.bottom
             }
+
+            findViewById<MaterialButton>(R.id.btnNativeAnalyze)
+                .updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    marginEnd = 16.dpToPx() + systemBars.right
+                    bottomMargin = 16.dpToPx() + systemBars.bottom
+                }
 
             errorContainer.updatePadding(
                 top = systemBars.top + 16.dpToPx(),

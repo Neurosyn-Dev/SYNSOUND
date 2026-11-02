@@ -28,6 +28,12 @@
         tools:targetApi="35">
 
         <activity
+            android:name=".NativeAudioAnalysisActivity"
+            android:exported="false"
+            android:label="@string/btn_native_analysis"
+            android:theme="@style/Theme.SynSound" />
+
+        <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|smallestScreenSize|density"
             android:exported="true"

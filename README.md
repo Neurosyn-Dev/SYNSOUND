@@ -1742,16 +1742,16 @@ Heavy asynchronous work must not interrupt recording or monitoring.
 
 Version 1.0.5 includes the native acoustic-analysis tap described above. The release workflow passed unit tests, native-audio test APK build, release build, signing, and publishing. Device lifecycle smoke checks covered microphone monitoring start/stop, the native indicator, restart, and page reload. Formal spectral-quality validation has not been completed, so the event labels remain heuristic and should not be treated as verified classifications.
 
-**Native offline WAV analysis is not in the published release.** [PR #11](https://github.com/Neurosyn-Dev/SYNSOUND/pull/11) is an open draft for a 1.0.6 / versionCode 6 candidate. It adds a native screen for local analysis of uncompressed PCM 16-bit mono/stereo WAV files (8–96 kHz, up to 64 MB), with RIFF boundary checks, bounded reads, parser regression tests, and no file upload. Its CI/unit tests and debug APK build passed on the reviewed branch, but the PR must remain a candidate until real-device or emulator smoke testing is completed. [PR #8](https://github.com/Neurosyn-Dev/SYNSOUND/pull/8) is closed as superseded by PR #11.
+**Native offline WAV analysis is not in the published release.** [PR #11](https://github.com/Neurosyn-Dev/SYNSOUND/pull/11) remains an open draft for a 1.0.6 / versionCode 6 candidate. It adds a native screen for local analysis of uncompressed PCM 16-bit mono/stereo WAV files (8–96 kHz, up to 64 MiB), with RIFF boundary and chunk-padding checks, bounded reads, PCM block-alignment and byte-rate validation, and no file upload. On the current PR head, 12 app tests and 14 SDK tests passed with zero failures and zero skips. The Native Android validation and Build & Release PR workflows also passed, producing a debug test APK and an unsigned release APK. The PR remains a candidate until the debug APK is installed and smoke-tested on a real Android device or emulator with valid and invalid files. The debug build uses the `.nativetest` application ID suffix and is not a production release. [PR #8](https://github.com/Neurosyn-Dev/SYNSOUND/pull/8) is closed as superseded by PR #11.
 
-**F-Droid status:** [fdroiddata MR !47018](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/47018) remains open for maintainer review. The v1.0.5 recipe's latest official pipeline passed, including the F-Droid build and metadata checks, but a passing pipeline is not acceptance into the official F-Droid repository. Byte-for-byte reproducible-build comparison remains unverified. The latest MR discussion says testing is temporarily paused while the hosted GUI update is finished; the MR's pinned 1.0.5 source and metadata have not been updated to the 1.0.6 candidate.
+**F-Droid status:** [fdroiddata MR !47018](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/47018) remains open for maintainer review and is not yet accepted into the official F-Droid repository. The reviewed v1.0.5 recipe's latest official pipeline passed all 9 jobs, including the F-Droid build and metadata checks. Byte-for-byte reproducible-build comparison remains unverified. The hosted GUI redesign is now complete, and read-only browser smoke tests have verified navigation through the key workspaces and tool views. Those checks did not start the audio engine, request microphone access, record, import/export, or test Android WebView behavior. The MR's source pin and metadata remain at v1.0.5 / versionCode 5; do not update them to 1.0.6 until that candidate has passed device testing and is released.
 
 Current priorities include:
 
 - Stability and performance
-- Hosted GUI user experience and regression testing
-- Android WebView and microphone-permission boundaries
-- Native WAV parser/device smoke testing for PR #11
+- Hosted GUI mobile/responsive and live-audio regression testing (desktop navigation smoke tests have passed; phone-width rendering remains unverified)
+- Android WebView, microphone-permission, and lifecycle validation
+- Native WAV parser and real-device/emulator smoke testing for PR #11
 - Accurate documentation of hosted-service dependencies and privacy boundaries
 - F-Droid maintainer review
 
