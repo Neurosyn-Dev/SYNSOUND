@@ -76,6 +76,21 @@ class PcmWavParserTest {
         PcmWavParser.parse(makeWav(channels = 1, sampleRate = 16000, bitsPerSample = 16, audioFormat = 1, data = ByteArray(0)))
     }
 
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsIncorrectBlockAlignment() {
+        val bytes = makeWav(channels = 2, sampleRate = 48000, bitsPerSample = 16, audioFormat = 1, data = ByteArray(8))
+        ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).putShort(32, 2)
+        PcmWavParser.parse(bytes)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsIncorrectByteRate() {
+        val bytes = makeWav(channels = 1, sampleRate = 16000, bitsPerSample = 16, audioFormat = 1, data = ByteArray(4))
+        ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).putInt(28, 8000)
+        PcmWavParser.parse(bytes)
+    }
+
     private fun makeWav(
         channels: Int,
         sampleRate: Int,
