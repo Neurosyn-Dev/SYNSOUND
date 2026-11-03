@@ -1,1 +1,1 @@
-Android client for SynSound's hosted acoustic-analysis service
+Android WebView client for SynSound's hosted acoustic-analysis service
