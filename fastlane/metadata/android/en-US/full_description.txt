@@ -26,6 +26,7 @@
 <li><strong>INTERNET</strong> - Connects to the hosted SynSound service.</li>
 <li><strong>ACCESS_NETWORK_STATE</strong> - Supports connectivity handling.</li>
 <li><strong>MODIFY_AUDIO_SETTINGS</strong> - Supports Android audio-routing integration.</li>
+<li><strong>WRITE_EXTERNAL_STORAGE</strong> - Legacy external-storage access, limited by the manifest to Android 9 and earlier (API 28 and below).</li>
 </ul>
 
 <h2>Technical details</h2>
