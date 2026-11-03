@@ -1,1 +1,1 @@
-AI-powered acoustic analysis & sound synthesis for Android
+Android WebView client for SynSound's hosted acoustic-analysis service

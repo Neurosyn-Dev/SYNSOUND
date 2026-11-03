@@ -1,36 +1,38 @@
-<p>SynSound is an open-source Android WebView client for the SynSound web application, with a reusable Kotlin SDK for secure Android integration.</p>
+<p>SynSound for Android is an open-source Android application that provides a secure WebView client for the hosted SynSound acoustic-analysis service.</p>
 
-<h2>Features</h2>
+<h2>Android application features</h2>
 <ul>
-<li>Secure HTTPS-only WebView integration with strict trusted-origin navigation.</li>
-<li>Real-time microphone capture through the hosted SynSound web application when Android microphone permission is granted.</li>
-<li>Native file selection with multi-file support and secure URI access.</li>
-<li>Authenticated downloads from the trusted SynSound HTTPS origin, including legacy Android download handling.</li>
-<li>Secure SDK WebView permission forwarding with fail-closed behavior.</li>
-<li>HTTPS/WSS-only custom SDK transport configuration.</li>
+<li>Native Android application shell and WebView integration.</li>
+<li>Microphone permission mediation for the hosted web application.</li>
+<li>Navigation, session persistence, file selection and downloads, and network/error recovery.</li>
+<li>On supported Android System WebView versions, a native acoustic-event detector can analyze bounded mono PCM frames tapped from the hosted application's already-active Web Audio microphone stream while monitoring is active.</li>
+<li>The native audio tap uses an origin-restricted bridge and does not open a second Android microphone capture.</li>
+<li>If the required WebView messaging capability is unavailable, the native audio tap remains inactive rather than falling back to an unrestricted JavaScript bridge.</li>
 </ul>
 
-<h2>Privacy and Security</h2>
-<p>No ads, analytics SDKs, crash reporters, or Firebase are included. The Android wrapper communicates with the hosted SynSound service over HTTPS. The wrapper does not claim that microphone audio remains on-device; audio processing and network handling are controlled by the hosted web application and its service infrastructure.</p>
+<h2>Important limitations</h2>
+<p>The Android APK is a WebView client for the hosted SynSound service. It does not implement every DSP, mastering, transcription, visualization, or forensic workflow as a native Android feature. The hosted web service is proprietary, network-dependent, and uses a fixed service endpoint.</p>
+<p>The native event status and candidate labels are heuristic signals, not definitive acoustic or forensic identifications.</p>
 
-<h2>Open Source</h2>
-<p>The Android application and SDK source code are available on GitHub under the MIT license.</p>
+<h2>Privacy and network behavior</h2>
+<p>The Android APK includes no advertising or analytics SDKs. The native bridge processes the PCM frames it receives in memory and does not itself write those frames to disk or send them to a cloud endpoint. However, microphone audio is supplied to the hosted web application when microphone access is granted. This listing makes no claim that audio remains on-device; the hosted service's own audio and network behavior has not been independently audited.</p>
+
+<h2>Open-source components</h2>
+<p>The Android application and Kotlin integration code in this repository are available under the MIT license. The hosted SynSound web service is separate and is not represented as open-source by this Android repository.</p>
 
 <h2>Permissions</h2>
 <ul>
-<li><strong>RECORD_AUDIO</strong> — Required when the hosted SynSound web application requests microphone capture.</li>
-<li><strong>INTERNET</strong> — Required to connect to the hosted SynSound web application.</li>
-<li><strong>ACCESS_NETWORK_STATE</strong> — Used for connectivity handling.</li>
-<li><strong>MODIFY_AUDIO_SETTINGS</strong> — Used for audio routing integration.</li>
-<li><strong>WRITE_EXTERNAL_STORAGE</strong> — Requested only on Android 9 and older when saving downloads to public Downloads.</li>
+<li><strong>RECORD_AUDIO</strong> - Allows microphone access when requested by the hosted SynSound web application.</li>
+<li><strong>INTERNET</strong> - Connects to the hosted SynSound service.</li>
+<li><strong>ACCESS_NETWORK_STATE</strong> - Supports connectivity handling.</li>
+<li><strong>MODIFY_AUDIO_SETTINGS</strong> - Supports Android audio-routing integration.</li>
+<li><strong>WRITE_EXTERNAL_STORAGE</strong> - Legacy external-storage access, limited by the manifest to Android 9 and earlier (API 28 and below).</li>
 </ul>
 
-<h2>Technical Details</h2>
+<h2>Technical details</h2>
 <ul>
-<li><strong>:app</strong> — Android WebView wrapper and native Android system integration.</li>
-<li><strong>:sdk</strong> — Reusable Kotlin SDK with secure WebView and transport components.</li>
+<li>Package: <code>com.synsound.app</code></li>
+<li>Minimum Android version: Android 8.0 (API 26)</li>
+<li>Target Android version: Android 15 (API 35)</li>
+<li>Release: 1.0.5 (versionCode 5)</li>
 </ul>
-
-<p>Minimum Android version: Android 8.0 (API 26)<br>
-Target Android version: Android 15 (API 35)<br>
-Version: 1.0.2 (versionCode 3)</p>
