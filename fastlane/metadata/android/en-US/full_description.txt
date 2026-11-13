@@ -34,5 +34,5 @@
 <li>Package: <code>com.synsound.app</code></li>
 <li>Minimum Android version: Android 8.0 (API 26)</li>
 <li>Target Android version: Android 15 (API 35)</li>
-<li>Release: 1.0.5 (versionCode 5)</li>
+<li>Release: 1.0.6 (versionCode 6)</li>
 </ul>
