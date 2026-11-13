@@ -1,0 +1,1 @@
+Android 15+ edge-to-edge compatibility fix: apply system bar and display cutout insets to the WebView host so the hosted app's header and top controls remain visible and tappable. Position the loading indicator within the safe area. No new audio-analysis features are included in this release.
