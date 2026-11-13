@@ -209,7 +209,23 @@ class MainActivity : AppCompatActivity() {
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
             )
 
-            progressBar.updatePadding(top = systemBars.top)
+            // Keep the hosted app's viewport inside the system bars. With targetSdk 35,
+            // Android 15+ enforces edge-to-edge, so leaving the WebView at y=0 places its
+            // header and controls underneath the status bar and makes them untappable.
+            swipeRefreshLayout.updatePadding(
+                left = systemBars.left,
+                top = systemBars.top,
+                right = systemBars.right,
+                bottom = systemBars.bottom
+            )
+
+            // The progress indicator is an overlay, so position it below the status bar
+            // instead of adding padding inside its fixed 3dp height.
+            progressBar.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                marginStart = systemBars.left
+                topMargin = systemBars.top
+                marginEnd = systemBars.right
+            }
 
             bottomNavContainer.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                 marginStart = 16.dpToPx() + systemBars.left
